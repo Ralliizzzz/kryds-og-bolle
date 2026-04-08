@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/server"
+import {
+  sendLeadEmailToCompany,
+  sendLeadSmsToCompany,
+  sendQuoteEmailToCustomer,
+} from "@/lib/notify"
+import type { CompanyRow, LeadRow } from "@/types/database"
 
 interface LeadPayload {
   name: string
@@ -9,9 +15,9 @@ interface LeadPayload {
   sqm?: number
   property_type?: "house" | "apartment" | "commercial"
   price: number
-  price_breakdown: object
+  price_breakdown: Record<string, unknown>
   action_type: "book" | "callback" | "email"
-  scheduled_at?: string // kun ved booking
+  scheduled_at?: string
 }
 
 export async function POST(
@@ -21,7 +27,6 @@ export async function POST(
   const { companyId } = await params
   const body: LeadPayload = await req.json()
 
-  // Validér påkrævede felter
   if (!body.name || !body.address || body.price == null || !body.action_type) {
     return NextResponse.json({ error: "Manglende felter" }, { status: 400 })
   }
@@ -40,7 +45,7 @@ export async function POST(
       sqm: body.sqm ?? null,
       property_type: body.property_type ?? null,
       price: body.price,
-      price_breakdown: body.price_breakdown,
+      price_breakdown: body.price_breakdown as unknown as import("@/types/database").Json,
       action_type: body.action_type,
       status: "new",
     })
@@ -62,9 +67,52 @@ export async function POST(
     })
   }
 
-  return NextResponse.json({ success: true, lead_id: lead.id }, {
-    headers: { "Access-Control-Allow-Origin": "*" },
-  })
+  // Send notifikationer asynkront — blokerer ikke svaret til widget'en
+  const companyResult = await supabase
+    .from("companies")
+    .select("company_name, email, phone")
+    .eq("id", companyId)
+    .single()
+
+  const company = companyResult.data as Pick<CompanyRow, "company_name" | "email" | "phone"> | null
+
+  if (company) {
+    const fullLead: LeadRow = {
+      id: lead.id,
+      company_id: companyId,
+      name: body.name,
+      email: body.email ?? null,
+      phone: body.phone ?? null,
+      address: body.address,
+      sqm: body.sqm ?? null,
+      property_type: body.property_type ?? null,
+      price: body.price,
+      price_breakdown: body.price_breakdown as unknown as import("@/types/database").Json,
+      action_type: body.action_type,
+      status: "new",
+      created_at: new Date().toISOString(),
+    }
+
+    // Fire-and-forget — fejl logger men crasher ikke ruten
+    Promise.allSettled([
+      sendLeadEmailToCompany(company, fullLead),
+      sendLeadSmsToCompany(company, fullLead),
+      body.action_type === "email"
+        ? sendQuoteEmailToCustomer(company, fullLead)
+        : Promise.resolve(),
+    ]).then((results) => {
+      results.forEach((r, i) => {
+        if (r.status === "rejected") {
+          console.error(`[notify] Notifikation ${i} fejlede:`, r.reason)
+        }
+      })
+    })
+  }
+
+  return NextResponse.json(
+    { success: true, lead_id: lead.id },
+    { headers: { "Access-Control-Allow-Origin": "*" } }
+  )
 }
 
 export async function OPTIONS() {
