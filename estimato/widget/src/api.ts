@@ -1,10 +1,13 @@
 import type { QuoteSettings, PriceBreakdown } from "./types"
 
-// Base URL sættes ved build-tid via esbuild define
-declare const WIDGET_API_BASE: string
+// Sættes ved mount() i index.tsx — detekteres fra script-taggets src
+let BASE = ""
+export function setApiBase(url: string) {
+  BASE = url
+}
 
 export async function fetchSettings(companyId: string): Promise<QuoteSettings> {
-  const res = await fetch(`${WIDGET_API_BASE}/api/widget/${companyId}/settings`)
+  const res = await fetch(`${BASE}/api/widget/${companyId}/settings`)
   if (!res.ok) throw new Error("Kunne ikke hente indstillinger")
   return res.json()
 }
@@ -13,7 +16,7 @@ export async function fetchAddressSuggestions(
   q: string
 ): Promise<{ text: string; id: string }[]> {
   if (q.length < 3) return []
-  const res = await fetch(`${WIDGET_API_BASE}/api/bbr?mode=autocomplete&q=${encodeURIComponent(q)}`)
+  const res = await fetch(`${BASE}/api/bbr?mode=autocomplete&q=${encodeURIComponent(q)}`)
   if (!res.ok) return []
   return res.json()
 }
@@ -21,13 +24,13 @@ export async function fetchAddressSuggestions(
 export async function fetchBBRData(
   id: string
 ): Promise<{ address: string; sqm: number | null; propertyType: string | null }> {
-  const res = await fetch(`${WIDGET_API_BASE}/api/bbr?mode=lookup&id=${id}`)
+  const res = await fetch(`${BASE}/api/bbr?mode=lookup&id=${id}`)
   if (!res.ok) throw new Error("BBR-opslag fejlede")
   return res.json()
 }
 
 export async function fetchSlots(companyId: string): Promise<string[]> {
-  const res = await fetch(`${WIDGET_API_BASE}/api/widget/${companyId}/slots`)
+  const res = await fetch(`${BASE}/api/widget/${companyId}/slots`)
   if (!res.ok) return []
   return res.json()
 }
@@ -47,7 +50,7 @@ export async function submitLead(
     scheduled_at?: string
   }
 ): Promise<{ success: boolean; lead_id: string }> {
-  const res = await fetch(`${WIDGET_API_BASE}/api/widget/${companyId}/lead`, {
+  const res = await fetch(`${BASE}/api/widget/${companyId}/lead`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

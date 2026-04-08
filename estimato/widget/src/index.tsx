@@ -1,10 +1,14 @@
 import { h, render } from "preact"
 import App from "./App"
+import { setApiBase } from "./api"
 
 function mount() {
-  // Hent company ID fra script-taggets data-attribut
   const script = document.currentScript as HTMLScriptElement | null
   const companyId = script?.dataset?.company ?? script?.getAttribute("data-company") ?? ""
+
+  // Auto-detektér API base URL fra script-taggets src (virker på alle domæner)
+  const apiBase = script?.src ? new URL(script.src).origin : window.location.origin
+  setApiBase(apiBase)
 
   if (!companyId) {
     console.warn("[Estimato] Mangler data-company attribut på script-tagget.")
