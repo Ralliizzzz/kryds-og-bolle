@@ -1,7 +1,6 @@
 import Link from "next/link"
 import Script from "next/script"
 
-const demoCompanyId = process.env.NEXT_PUBLIC_DEMO_COMPANY_ID
 
 const features = [
   {
@@ -113,30 +112,11 @@ export default function HomePage() {
             </div>
 
             <div className="flex justify-center">
-              {demoCompanyId ? (
-                <>
-                  <Script
-                    src="/widget.js"
-                    data-company={demoCompanyId}
-                    strategy="lazyOnload"
-                  />
-                  <div id="lead-widget" className="w-full max-w-lg" />
-                </>
-              ) : (
-                <div className="w-full max-w-lg border border-dashed border-gray-300 rounded-xl p-10 text-center bg-white">
-                  <p className="text-3xl mb-3">🧮</p>
-                  <p className="font-medium text-gray-700 mb-1">Widget-eksempel indlæses snart</p>
-                  <p className="text-sm text-gray-400">
-                    Opret din konto for at se beregneren i aktion
-                  </p>
-                  <Link
-                    href="/auth/signup"
-                    className="mt-4 inline-block bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
-                  >
-                    Opret konto
-                  </Link>
-                </div>
-              )}
+              <div id="lead-widget" data-company="5a5dd101-7be3-4035-9be3-8e87b94c2e89" className="w-full max-w-lg" />
+              <Script
+                src="https://estimato-xi.vercel.app/widget.js"
+                strategy="lazyOnload"
+              />
             </div>
           </div>
         </section>
