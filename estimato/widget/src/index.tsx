@@ -2,12 +2,12 @@ import { h, render } from "preact"
 import App from "./App"
 import { setApiBase } from "./api"
 
-function mount() {
-  const script = document.currentScript as HTMLScriptElement | null
-  const companyId = script?.dataset?.company ?? script?.getAttribute("data-company") ?? ""
+// Fanges med det samme — document.currentScript er null i event handlers
+const script = document.currentScript as HTMLScriptElement | null
+const companyId = script?.dataset?.company ?? script?.getAttribute("data-company") ?? ""
+const apiBase = script?.src ? new URL(script.src).origin : window.location.origin
 
-  // Auto-detektér API base URL fra script-taggets src (virker på alle domæner)
-  const apiBase = script?.src ? new URL(script.src).origin : window.location.origin
+function mount() {
   setApiBase(apiBase)
 
   if (!companyId) {
@@ -15,7 +15,6 @@ function mount() {
     return
   }
 
-  // Find eller opret container
   const container = document.getElementById("lead-widget")
   if (!container) {
     console.warn("[Estimato] Fandt ikke <div id='lead-widget'> på siden.")
