@@ -41,7 +41,7 @@ export default function App({ companyId }: AppProps) {
   // Address step
   const [addressText, setAddressText] = useState("")
   const [addressId, setAddressId] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<{ text: string; id: string; adgangsadresseid: string }[]>([])
+  const [suggestions, setSuggestions] = useState<{ text: string; id: string }[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [propertyType, setPropertyType] = useState<PropertyType>("house")
   const [sqm, setSqm] = useState<string>("")
@@ -81,14 +81,14 @@ export default function App({ companyId }: AppProps) {
     }, 300)
   }
 
-  async function onSelectSuggestion(s: { text: string; id: string; adgangsadresseid: string }) {
+  async function onSelectSuggestion(s: { text: string; id: string }) {
     setAddressText(s.text)
     setAddressId(s.id)
     setSuggestions([])
     setShowSuggestions(false)
     setBbrLoading(true)
     try {
-      const bbr = await fetchBBRData(s.id, s.adgangsadresseid)
+      const bbr = await fetchBBRData(s.id)
       if (bbr.sqm) setSqm(String(Math.round(bbr.sqm)))
       if (bbr.propertyType) setPropertyType(bbr.propertyType as PropertyType)
     } catch {
