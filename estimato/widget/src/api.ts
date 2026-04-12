@@ -14,7 +14,7 @@ export async function fetchSettings(companyId: string): Promise<QuoteSettings> {
 
 export async function fetchAddressSuggestions(
   q: string
-): Promise<{ text: string; id: string }[]> {
+): Promise<{ text: string; id: string; adgangsadresseid: string }[]> {
   if (q.length < 3) return []
   const res = await fetch(`${BASE}/api/bbr?mode=autocomplete&q=${encodeURIComponent(q)}`)
   if (!res.ok) return []
@@ -22,9 +22,12 @@ export async function fetchAddressSuggestions(
 }
 
 export async function fetchBBRData(
-  id: string
+  id: string,
+  adgangsadresseid?: string
 ): Promise<{ address: string; sqm: number | null; propertyType: string | null }> {
-  const res = await fetch(`${BASE}/api/bbr?mode=lookup&id=${id}`)
+  const params = new URLSearchParams({ mode: "lookup", id })
+  if (adgangsadresseid) params.set("adgangsadresseid", adgangsadresseid)
+  const res = await fetch(`${BASE}/api/bbr?${params}`)
   if (!res.ok) throw new Error("BBR-opslag fejlede")
   return res.json()
 }
