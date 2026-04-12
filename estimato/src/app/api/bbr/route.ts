@@ -7,15 +7,13 @@ const BBR_BASE = "https://services.datafordeler.dk/BBR/BBRPublic/1/REST"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const q = searchParams.get("q")
-
-  if (!q) {
-    return NextResponse.json({ error: "Mangler q parameter" }, { status: 400 })
-  }
-
   const mode = searchParams.get("mode") ?? "autocomplete"
 
   if (mode === "autocomplete") {
+    const q = searchParams.get("q")
+    if (!q) {
+      return NextResponse.json({ error: "Mangler q parameter" }, { status: 400 })
+    }
     const res = await fetch(
       `${DAWA_BASE}/adresser/autocomplete?q=${encodeURIComponent(q)}&per_side=6&fuzzy=true`,
       { next: { revalidate: 0 } }
