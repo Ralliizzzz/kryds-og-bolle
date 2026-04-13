@@ -1,9 +1,9 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import type { QuoteSettingsData } from "@/types/settings"
+import type { OpeningHours } from "@/types/settings"
 
-export async function saveSettings(data: QuoteSettingsData): Promise<{ error?: string }> {
+export async function saveSettings(openingHours: OpeningHours): Promise<{ error?: string }> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -13,15 +13,7 @@ export async function saveSettings(data: QuoteSettingsData): Promise<{ error?: s
 
   const { error } = await supabase
     .from("quote_settings")
-    .update({
-      pricing_type: data.pricing_type,
-      price_per_sqm: data.price_per_sqm,
-      interval_ranges: data.interval_ranges,
-      add_ons: data.add_ons,
-      discounts: data.discounts,
-      minimum_price: data.minimum_price,
-      opening_hours: data.opening_hours,
-    })
+    .update({ opening_hours: openingHours })
     .eq("company_id", user.id)
 
   if (error) return { error: "Kunne ikke gemme indstillinger" }

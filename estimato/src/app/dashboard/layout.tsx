@@ -36,6 +36,7 @@ export default async function DashboardLayout({
         <NavLink href="/dashboard">Oversigt</NavLink>
         <NavLink href="/dashboard/leads">Leads</NavLink>
         <NavLink href="/dashboard/bookings">Bookinger</NavLink>
+        <NavLink href="/dashboard/priser">Priser og tillæg</NavLink>
         <NavLink href="/dashboard/settings">Indstillinger</NavLink>
         <NavLink href="/dashboard/embed">Embed widget</NavLink>
 
