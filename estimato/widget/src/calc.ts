@@ -14,7 +14,7 @@ export function calculatePrice(
     const range = settings.interval_ranges.find(
       (r) => sqm >= r.min && sqm <= r.max
     )
-    base = range?.price ?? 0
+    base = range ? Math.round(sqm * range.price_per_m2) : 0
   }
 
   // Minimum pris

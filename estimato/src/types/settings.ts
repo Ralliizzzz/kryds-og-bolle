@@ -17,7 +17,7 @@ export interface Discount {
 export interface IntervalRange {
   min: number
   max: number
-  price: number
+  price_per_m2: number
 }
 
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"

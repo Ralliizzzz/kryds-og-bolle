@@ -62,7 +62,7 @@ export default function PriserForm({ initialData }: Props) {
     const newRange: IntervalRange = {
       min: last ? last.max + 1 : 0,
       max: last ? last.max + 20 : 20,
-      price: 0,
+      price_per_m2: 0,
     }
     update("interval_ranges", [...data.interval_ranges, newRange])
   }
@@ -114,7 +114,7 @@ export default function PriserForm({ initialData }: Props) {
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
               <span>Fra (m²)</span>
               <span>Til (m²)</span>
-              <span>Pris (kr)</span>
+              <span>Pris pr. m² (kr)</span>
               <span />
             </div>
             {data.interval_ranges.map((r, idx) => (
@@ -137,8 +137,8 @@ export default function PriserForm({ initialData }: Props) {
                   type="number"
                   min="0"
                   className={input}
-                  value={r.price}
-                  onChange={(e) => updateRange(idx, "price", Number(e.target.value))}
+                  value={r.price_per_m2}
+                  onChange={(e) => updateRange(idx, "price_per_m2", Number(e.target.value))}
                 />
                 <button
                   onClick={() => removeRange(idx)}

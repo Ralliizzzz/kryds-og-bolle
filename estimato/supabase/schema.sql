@@ -39,7 +39,7 @@ CREATE TABLE public.quote_settings (
   pricing_type    TEXT NOT NULL DEFAULT 'sqm'
                   CHECK (pricing_type IN ('sqm', 'interval')),
   price_per_sqm   NUMERIC(10,2),
-  -- [{min: 0, max: 20, price: 500}, {min: 21, max: 40, price: 800}]
+  -- [{min: 0, max: 50, price_per_m2: 10}, {min: 51, max: 100, price_per_m2: 8}]
   interval_ranges JSONB NOT NULL DEFAULT '[]',
   -- [{id: "uuid", name: "Vinduespolering", price: 200}]
   add_ons         JSONB NOT NULL DEFAULT '[]',
