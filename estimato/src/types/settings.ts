@@ -20,6 +20,12 @@ export interface IntervalRange {
   price_per_m2: number
 }
 
+export interface FlatRange {
+  min: number
+  max: number
+  price: number
+}
+
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 export type OpeningHours = Record<DayKey, { open: string; close: string } | null>
 
@@ -27,6 +33,7 @@ export interface QuoteSettingsData {
   pricing_type: "sqm" | "interval"
   price_per_sqm: number | null
   interval_ranges: IntervalRange[]
+  flat_ranges: FlatRange[]
   add_ons: AddOn[]
   discounts: Discount[]
   minimum_price: number | null

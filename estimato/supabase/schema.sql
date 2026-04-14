@@ -41,6 +41,8 @@ CREATE TABLE public.quote_settings (
   price_per_sqm   NUMERIC(10,2),
   -- [{min: 0, max: 50, price_per_m2: 10}, {min: 51, max: 100, price_per_m2: 8}]
   interval_ranges JSONB NOT NULL DEFAULT '[]',
+  -- [{min: 0, max: 50, price: 200}, {min: 51, max: 100, price: 350}]
+  flat_ranges     JSONB NOT NULL DEFAULT '[]',
   -- [{id: "uuid", name: "Vinduespolering", price: 200}]
   add_ons         JSONB NOT NULL DEFAULT '[]',
   -- [{id: "uuid", name: "Tilbagevendende kunde", type: "percent"|"fixed", value: 10}]

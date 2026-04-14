@@ -10,7 +10,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("quote_settings")
-    .select("pricing_type, price_per_sqm, interval_ranges, add_ons, discounts, minimum_price")
+    .select("pricing_type, price_per_sqm, interval_ranges, flat_ranges, add_ons, discounts, minimum_price")
     .eq("company_id", companyId)
     .single()
 

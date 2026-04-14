@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import type { QuoteSettingsRow } from "@/types/database"
-import type { AddOn, Discount, IntervalRange } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange } from "@/types/settings"
 import PriserForm from "./PriserForm"
 
 export default async function PriserPage() {
@@ -23,6 +23,7 @@ export default async function PriserPage() {
     pricing_type: (row?.pricing_type ?? "sqm") as "sqm" | "interval",
     price_per_sqm: row?.price_per_sqm ?? null,
     interval_ranges: (row?.interval_ranges ?? []) as unknown as IntervalRange[],
+    flat_ranges: (row?.flat_ranges ?? []) as unknown as FlatRange[],
     add_ons: (row?.add_ons ?? []) as unknown as AddOn[],
     discounts: (row?.discounts ?? []) as unknown as Discount[],
     minimum_price: row?.minimum_price ?? null,

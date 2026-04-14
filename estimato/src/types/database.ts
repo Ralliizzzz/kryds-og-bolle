@@ -29,6 +29,7 @@ export interface QuoteSettingsRow {
   pricing_type: PricingType
   price_per_sqm: number | null
   interval_ranges: Json
+  flat_ranges: Json
   add_ons: Json
   discounts: Json
   minimum_price: number | null

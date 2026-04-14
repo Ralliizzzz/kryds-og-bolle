@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import type { AddOn, Discount, IntervalRange } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange } from "@/types/settings"
 import { savePriser, type PriserData } from "./actions"
 
 interface Props {
@@ -56,7 +56,7 @@ export default function PriserForm({ initialData }: Props) {
     update("discounts", data.discounts.filter((d) => d.id !== id))
   }
 
-  // ── Intervalpriser ─────────────────────────────────────────────────────────
+  // ── Pris pr. m² intervaller ────────────────────────────────────────────────
   function addRange() {
     const last = data.interval_ranges.at(-1)
     const newRange: IntervalRange = {
@@ -71,6 +71,23 @@ export default function PriserForm({ initialData }: Props) {
   }
   function removeRange(idx: number) {
     update("interval_ranges", data.interval_ranges.filter((_, i) => i !== idx))
+  }
+
+  // ── Pris i alt intervaller ─────────────────────────────────────────────────
+  function addFlatRange() {
+    const last = data.flat_ranges.at(-1)
+    const newRange: FlatRange = {
+      min: last ? last.max + 1 : 0,
+      max: last ? last.max + 20 : 20,
+      price: 0,
+    }
+    update("flat_ranges", [...data.flat_ranges, newRange])
+  }
+  function updateFlatRange(idx: number, field: keyof FlatRange, value: number) {
+    update("flat_ranges", data.flat_ranges.map((r, i) => (i === idx ? { ...r, [field]: value } : r)))
+  }
+  function removeFlatRange(idx: number) {
+    update("flat_ranges", data.flat_ranges.filter((_, i) => i !== idx))
   }
 
   return (
@@ -89,28 +106,65 @@ export default function PriserForm({ initialData }: Props) {
                   : "border-gray-200 text-gray-500 hover:border-gray-400"
               }`}
             >
-              {type === "sqm" ? "Kr. pr. m²" : "Intervalpriser"}
+              {type === "sqm" ? "Pris i alt" : "Pris pr. m²"}
             </button>
           ))}
         </div>
 
         {data.pricing_type === "sqm" && (
-          <Field label="Pris pr. m² (kr)">
-            <input
-              type="number"
-              min="0"
-              className={input}
-              value={data.price_per_sqm ?? ""}
-              onChange={(e) =>
-                update("price_per_sqm", e.target.value ? Number(e.target.value) : null)
-              }
-              placeholder="F.eks. 12"
-            />
-          </Field>
+          <div>
+            <p className="text-sm text-gray-500 mb-3">
+              Angiv en fast pris for hver størrelsesinterval. F.eks. 0–50 m² → 200 kr i alt.
+            </p>
+            <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
+              <span>Fra (m²)</span>
+              <span>Til (m²)</span>
+              <span>Pris i alt (kr)</span>
+              <span />
+            </div>
+            {data.flat_ranges.map((r, idx) => (
+              <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 mb-2">
+                <input
+                  type="number"
+                  min="0"
+                  className={input}
+                  value={r.min}
+                  onChange={(e) => updateFlatRange(idx, "min", Number(e.target.value))}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  className={input}
+                  value={r.max}
+                  onChange={(e) => updateFlatRange(idx, "max", Number(e.target.value))}
+                />
+                <input
+                  type="number"
+                  min="0"
+                  className={input}
+                  value={r.price}
+                  onChange={(e) => updateFlatRange(idx, "price", Number(e.target.value))}
+                />
+                <button
+                  onClick={() => removeFlatRange(idx)}
+                  className="text-gray-300 hover:text-red-400 transition-colors px-2 text-lg leading-none"
+                  title="Fjern"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button onClick={addFlatRange} className={btnSecondary}>
+              + Tilføj interval
+            </button>
+          </div>
         )}
 
         {data.pricing_type === "interval" && (
           <div>
+            <p className="text-sm text-gray-500 mb-3">
+              Angiv en pris pr. m² for hver størrelsesinterval. Den endelige pris = areal × pris pr. m².
+            </p>
             <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
               <span>Fra (m²)</span>
               <span>Til (m²)</span>

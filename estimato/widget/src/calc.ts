@@ -8,8 +8,9 @@ export function calculatePrice(
 ): PriceBreakdown {
   // Basispris
   let base = 0
-  if (settings.pricing_type === "sqm" && settings.price_per_sqm) {
-    base = Math.round(sqm * settings.price_per_sqm)
+  if (settings.pricing_type === "sqm") {
+    const range = settings.flat_ranges.find((r) => sqm >= r.min && sqm <= r.max)
+    base = range?.price ?? 0
   } else if (settings.pricing_type === "interval") {
     const range = settings.interval_ranges.find(
       (r) => sqm >= r.min && sqm <= r.max
