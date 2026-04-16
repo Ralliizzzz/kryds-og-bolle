@@ -310,14 +310,15 @@ export default function App({ companyId }: AppProps) {
 
           {settings.frequency_discounts.length > 0 && (
             <div style={s.fieldset}>
-              <label style={s.label}>Rengøringsfrekvens</label>
+              <label style={s.label}>Hyppighedsrabat</label>
               {settings.frequency_discounts.map((f) => (
                 <label key={f.frequency} style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;font-size:0.88rem;">
                   <input
                     type="radio"
                     name="frequency"
                     checked={selectedFrequency === f.frequency}
-                    onChange={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
+                    onClick={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
+                    onChange={() => {}}
                     style="width:16px;height:16px;accent-color:#3b82f6;"
                   />
                   <span style="flex:1;">{FREQUENCY_LABELS[f.frequency]}</span>
@@ -336,7 +337,8 @@ export default function App({ companyId }: AppProps) {
                     type="radio"
                     name="discount"
                     checked={selectedDiscount === d.id}
-                    onChange={() => setSelectedDiscount(selectedDiscount === d.id ? null : d.id)}
+                    onClick={() => setSelectedDiscount(selectedDiscount === d.id ? null : d.id)}
+                    onChange={() => {}}
                     style="width:16px;height:16px;accent-color:#3b82f6;"
                   />
                   <span style="flex:1;">{d.name}</span>
