@@ -123,8 +123,13 @@ export default function App({ companyId }: AppProps) {
   function goToPrice() {
     if (!settings || !sqm || Number(sqm) <= 0) return
 
-    // Afstandstjek
-    if (settings.locations && settings.locations.length > 0 && customerLat && customerLon) {
+    // Afstandstjek — kun hvis virksomheden har konfigureret serviceområde
+    if (settings.locations && settings.locations.length > 0) {
+      if (!customerLat || !customerLon) {
+        // Brugeren har ikke valgt adresse fra autocomplete — vi mangler koordinater
+        setOutOfRange(true)
+        return
+      }
       const inRange = settings.locations.some(
         (loc) => haversineKm(customerLat, customerLon, loc.lat, loc.lon) <= loc.max_distance_km
       )
