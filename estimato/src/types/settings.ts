@@ -29,6 +29,12 @@ export interface FlatRange {
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 export type OpeningHours = Record<DayKey, { open: string; close: string } | null>
 
+export interface TransportFee {
+  enabled: boolean
+  base_distance_km: number
+  price_per_km: number
+}
+
 export interface Location {
   name: string
   street_address: string

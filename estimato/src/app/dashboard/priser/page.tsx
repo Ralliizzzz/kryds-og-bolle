@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import type { QuoteSettingsRow } from "@/types/database"
-import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount, FrequencyKey } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount, FrequencyKey, TransportFee } from "@/types/settings"
 import { PREDEFINED_ADD_ONS, PREDEFINED_IDS } from "@/lib/predefined-add-ons"
 import PriserForm from "./PriserForm"
 
@@ -48,6 +48,9 @@ export default async function PriserPage() {
         return found ?? { frequency: d.frequency, discount_percentage: 0, enabled: false }
       })
     })(),
+    transport_fee: ((row?.transport_fee ?? {}) as unknown as Partial<TransportFee>).enabled !== undefined
+      ? (row!.transport_fee as unknown as TransportFee)
+      : { enabled: false, base_distance_km: 0, price_per_km: 0 },
   }
 
   return (

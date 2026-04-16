@@ -37,6 +37,7 @@ export interface QuoteSettingsRow {
   frequency_discounts: Json
   main_location: Json
   branch_locations: Json
+  transport_fee: Json
   updated_at: string
 }
 

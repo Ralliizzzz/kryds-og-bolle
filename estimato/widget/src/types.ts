@@ -34,6 +34,12 @@ export interface FrequencyDiscount {
   enabled: boolean
 }
 
+export interface TransportFee {
+  enabled: boolean
+  base_distance_km: number
+  price_per_km: number
+}
+
 export interface WidgetLocation {
   name: string
   lat: number
@@ -51,6 +57,7 @@ export interface QuoteSettings {
   minimum_price: number | null
   frequency_discounts: FrequencyDiscount[]
   locations?: WidgetLocation[]
+  transport_fee: TransportFee
 }
 
 export interface PriceBreakdown {
@@ -58,6 +65,7 @@ export interface PriceBreakdown {
   add_ons: { name: string; price: number }[]
   discount: { name: string; value: number } | null
   frequency_discount: { name: string; value: number } | null
+  transport_fee: number
   total: number
 }
 

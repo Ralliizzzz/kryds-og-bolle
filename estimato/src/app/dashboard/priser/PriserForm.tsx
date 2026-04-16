@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount, TransportFee } from "@/types/settings"
 import { savePriser, type PriserData } from "./actions"
 import { PREDEFINED_IDS } from "@/lib/predefined-add-ons"
 import type { FrequencyKey } from "@/types/settings"
@@ -343,7 +343,53 @@ export default function PriserForm({ initialData }: Props) {
         </div>
       </Section>
 
-      {/* ── 4. Rabatter ── */}
+      {/* ── 4. Transportgebyr ── */}
+      <Section title="Transportgebyr">
+        <p className="text-sm text-gray-500 mb-4">
+          Tilføj et kørselsgebyr baseret på afstanden fra din adresse til kunden.
+          Kræver at du har sat en adresse under Indstillinger → Serviceområde.
+        </p>
+        <div className="flex items-center gap-3 mb-4">
+          <input
+            type="checkbox"
+            id="transport-enabled"
+            checked={data.transport_fee.enabled}
+            onChange={(e) => update("transport_fee", { ...data.transport_fee, enabled: e.target.checked })}
+            className="w-4 h-4 accent-blue-500"
+          />
+          <label htmlFor="transport-enabled" className="text-sm font-medium text-gray-700 cursor-pointer">
+            Aktiver transportgebyr
+          </label>
+        </div>
+        {data.transport_fee.enabled && (
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Inkluderet afstand (km)">
+              <input
+                type="number"
+                min="0"
+                className={input}
+                value={data.transport_fee.base_distance_km || ""}
+                onChange={(e) => update("transport_fee", { ...data.transport_fee, base_distance_km: Number(e.target.value) })}
+                placeholder="F.eks. 10"
+              />
+              <p className="text-xs text-gray-400 mt-1">Ingen gebyr inden for denne afstand.</p>
+            </Field>
+            <Field label="Pris pr. km (kr)">
+              <input
+                type="number"
+                min="0"
+                className={input}
+                value={data.transport_fee.price_per_km || ""}
+                onChange={(e) => update("transport_fee", { ...data.transport_fee, price_per_km: Number(e.target.value) })}
+                placeholder="F.eks. 5"
+              />
+              <p className="text-xs text-gray-400 mt-1">Kr. pr. km ud over inkluderet afstand.</p>
+            </Field>
+          </div>
+        )}
+      </Section>
+
+      {/* ── 5. Rabatter ── */}
       <Section title="Rabatter">
         <p className="text-sm text-gray-500 mb-3">
           Rabatter kunden kan vælge i widget&apos;en (f.eks. tilbagevendende kunde).

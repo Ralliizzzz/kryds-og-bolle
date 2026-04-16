@@ -10,7 +10,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("quote_settings")
-    .select("pricing_type, price_per_sqm, interval_ranges, flat_ranges, add_ons, discounts, minimum_price, frequency_discounts, main_location, branch_locations")
+    .select("pricing_type, price_per_sqm, interval_ranges, flat_ranges, add_ons, discounts, minimum_price, frequency_discounts, main_location, branch_locations, transport_fee")
     .eq("company_id", companyId)
     .single()
 
@@ -28,7 +28,7 @@ export async function GET(
     ...branchLocs.filter((b) => b.lat && b.lon && (b.max_distance_km ?? 0) > 0),
   ].map((l) => ({ name: l.name ?? "", lat: l.lat, lon: l.lon, max_distance_km: l.max_distance_km }))
 
-  const { main_location: _ml, branch_locations: _bl, ...rest } = data as typeof data & { main_location: unknown; branch_locations: unknown }
+  const { main_location: _ml, branch_locations: _bl, transport_fee: _tf, ...rest } = data as typeof data & { main_location: unknown; branch_locations: unknown; transport_fee: unknown }
 
   const filtered = {
     ...rest,
@@ -36,6 +36,7 @@ export async function GET(
     frequency_discounts: ((data.frequency_discounts ?? []) as { enabled: boolean; discount_percentage: number }[])
       .filter((f) => f.enabled && f.discount_percentage > 0),
     ...(locations.length > 0 ? { locations } : {}),
+    transport_fee: (data.transport_fee ?? { enabled: false, base_distance_km: 0, price_per_km: 0 }) as { enabled: boolean; base_distance_km: number; price_per_km: number },
   }
 
   return NextResponse.json(filtered, {

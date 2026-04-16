@@ -54,6 +54,8 @@ CREATE TABLE public.quote_settings (
   main_location         JSONB NOT NULL DEFAULT '{}',
   -- [{name, street_address, postal_code, city, country, lat, lon, max_distance_km}]
   branch_locations      JSONB NOT NULL DEFAULT '[]',
+  -- {enabled: bool, base_distance_km: number, price_per_km: number}
+  transport_fee         JSONB NOT NULL DEFAULT '{"enabled":false,"base_distance_km":0,"price_per_km":0}',
   -- {mon: {open: "08:00", close: "16:00"}, ..., sat: null, sun: null}
   opening_hours   JSONB NOT NULL DEFAULT '{"mon":{"open":"08:00","close":"16:00"},"tue":{"open":"08:00","close":"16:00"},"wed":{"open":"08:00","close":"16:00"},"thu":{"open":"08:00","close":"16:00"},"fri":{"open":"08:00","close":"16:00"},"sat":null,"sun":null}',
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()

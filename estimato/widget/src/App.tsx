@@ -63,6 +63,7 @@ export default function App({ companyId }: AppProps) {
   const [bbrLoading, setBbrLoading] = useState(false)
   const [customerLat, setCustomerLat] = useState<number | null>(null)
   const [customerLon, setCustomerLon] = useState<number | null>(null)
+  const [nearestDistanceKm, setNearestDistanceKm] = useState<number | null>(null)
   const [outOfRange, setOutOfRange] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -113,17 +114,24 @@ export default function App({ companyId }: AppProps) {
       setCustomerLat(bbr.lat)
       setCustomerLon(bbr.lon)
 
-      // Afstandstjek med de friskfetchede koordinater (ikke fra state)
+      // Afstandstjek + gem nærmeste afstand til transportgebyr
       if (settings?.locations && settings.locations.length > 0) {
         if (!bbr.lat || !bbr.lon) {
           setOutOfRange(true)
+          setNearestDistanceKm(null)
         } else {
-          const inRange = settings.locations.some(
-            (loc) => haversineKm(bbr.lat!, bbr.lon!, loc.lat, loc.lon) <= loc.max_distance_km
+          const distances = settings.locations.map(
+            (loc) => ({ loc, km: haversineKm(bbr.lat!, bbr.lon!, loc.lat, loc.lon) })
           )
-          setOutOfRange(!inRange)
+          const nearest = distances.reduce((a, b) => a.km < b.km ? a : b)
+          setNearestDistanceKm(nearest.km)
+          setOutOfRange(nearest.km > nearest.loc.max_distance_km)
         }
       } else {
+        // Ingen serviceområde — beregn stadig afstand til transportgebyr
+        if (bbr.lat && bbr.lon && settings?.locations?.length === 0) {
+          setNearestDistanceKm(null)
+        }
         setOutOfRange(false)
       }
     } catch {
@@ -137,7 +145,7 @@ export default function App({ companyId }: AppProps) {
     if (!settings || !sqm || Number(sqm) <= 0) return
     if (outOfRange) return
 
-    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency)
+    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency, nearestDistanceKm)
     setBreakdown(bd)
     setStep("price")
   }
@@ -150,9 +158,9 @@ export default function App({ companyId }: AppProps) {
 
   useEffect(() => {
     if (!settings || !sqm) return
-    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency)
+    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency, nearestDistanceKm)
     setBreakdown(bd)
-  }, [selectedAddOns, selectedDiscount, selectedFrequency, settings, sqm])
+  }, [selectedAddOns, selectedDiscount, selectedFrequency, nearestDistanceKm, settings, sqm])
 
   async function goToContact(chosenAction: ActionType) {
     setAction(chosenAction)
@@ -317,6 +325,12 @@ export default function App({ companyId }: AppProps) {
               <div style={s.priceRow}>
                 <span>Hyppighedsrabat ({breakdown.frequency_discount.name})</span>
                 <span style="color:#16a34a;">{breakdown.frequency_discount.value.toLocaleString("da-DK")} kr</span>
+              </div>
+            )}
+            {breakdown.transport_fee > 0 && (
+              <div style={s.priceRow}>
+                <span>Transportgebyr</span>
+                <span>+{breakdown.transport_fee.toLocaleString("da-DK")} kr</span>
               </div>
             )}
             <div style={s.total}>

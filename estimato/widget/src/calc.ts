@@ -5,7 +5,8 @@ export function calculatePrice(
   settings: QuoteSettings,
   selectedAddOnIds: string[],
   selectedDiscountId: string | null,
-  selectedFrequency: FrequencyKey | null = null
+  selectedFrequency: FrequencyKey | null = null,
+  distanceKm: number | null = null
 ): PriceBreakdown {
   // Basispris
   let base = 0
@@ -60,7 +61,15 @@ export function calculatePrice(
     }
   }
 
-  const total = base + addOnTotal + (discount?.value ?? 0) + (frequency_discount?.value ?? 0)
+  // Transportgebyr
+  let transport_fee = 0
+  const tf = settings.transport_fee
+  if (tf?.enabled && tf.price_per_km > 0 && distanceKm !== null) {
+    const billableKm = Math.max(0, distanceKm - (tf.base_distance_km ?? 0))
+    transport_fee = Math.round(billableKm * tf.price_per_km)
+  }
 
-  return { base, add_ons: addOns, discount, frequency_discount, total: Math.max(0, total) }
+  const total = base + addOnTotal + (discount?.value ?? 0) + (frequency_discount?.value ?? 0) + transport_fee
+
+  return { base, add_ons: addOns, discount, frequency_discount, transport_fee, total: Math.max(0, total) }
 }
