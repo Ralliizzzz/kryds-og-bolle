@@ -74,7 +74,7 @@ export async function GET(req: Request) {
       }
     }
 
-    const coords: number[] | undefined = addr?.adgangspunkt?.koordinater
+    const coords: number[] | undefined = addr?.adgangsadresse?.adgangspunkt?.koordinater
     const lon: number | null = coords?.[0] ?? null
     const lat: number | null = coords?.[1] ?? null
 

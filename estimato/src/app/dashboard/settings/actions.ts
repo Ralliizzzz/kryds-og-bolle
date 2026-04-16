@@ -11,7 +11,7 @@ async function geocodeLocation(loc: Location): Promise<Location> {
     const q = [loc.street_address, loc.postal_code, loc.city].filter(Boolean).join(" ")
     const res = await fetch(
       `${DAWA_BASE}/adresser?q=${encodeURIComponent(q)}&per_side=1&struktur=mini`,
-      { cache: "no-store" }
+      { next: { revalidate: 0 } }
     )
     if (!res.ok) return loc
     const data = await res.json()
