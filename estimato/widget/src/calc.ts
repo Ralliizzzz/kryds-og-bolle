@@ -1,10 +1,11 @@
-import type { QuoteSettings, PriceBreakdown } from "./types"
+import type { QuoteSettings, PriceBreakdown, FrequencyKey } from "./types"
 
 export function calculatePrice(
   sqm: number,
   settings: QuoteSettings,
   selectedAddOnIds: string[],
-  selectedDiscountId: string | null
+  selectedDiscountId: string | null,
+  selectedFrequency: FrequencyKey | null = null
 ): PriceBreakdown {
   // Basispris
   let base = 0
@@ -42,7 +43,24 @@ export function calculatePrice(
     }
   }
 
-  const total = base + addOnTotal + (discount?.value ?? 0)
+  // Hyppighedsrabat
+  const FREQUENCY_LABELS: Record<FrequencyKey, string> = {
+    weekly: "Ugentlig",
+    every2weeks: "Hver 2. uge",
+    every3weeks: "Hver 3. uge",
+    every4weeks: "Hver 4. uge",
+  }
+  let frequency_discount: { name: string; value: number } | null = null
+  if (selectedFrequency) {
+    const fd = settings.frequency_discounts.find((f) => f.frequency === selectedFrequency)
+    if (fd && fd.enabled && fd.discount_percentage > 0) {
+      const subtotal = base + addOnTotal + (discount?.value ?? 0)
+      const value = -Math.round((subtotal * fd.discount_percentage) / 100)
+      frequency_discount = { name: FREQUENCY_LABELS[selectedFrequency], value }
+    }
+  }
 
-  return { base, add_ons: addOns, discount, total: Math.max(0, total) }
+  const total = base + addOnTotal + (discount?.value ?? 0) + (frequency_discount?.value ?? 0)
+
+  return { base, add_ons: addOns, discount, frequency_discount, total: Math.max(0, total) }
 }

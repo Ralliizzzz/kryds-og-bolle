@@ -10,7 +10,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("quote_settings")
-    .select("pricing_type, price_per_sqm, interval_ranges, flat_ranges, add_ons, discounts, minimum_price")
+    .select("pricing_type, price_per_sqm, interval_ranges, flat_ranges, add_ons, discounts, minimum_price, frequency_discounts")
     .eq("company_id", companyId)
     .single()
 
@@ -21,6 +21,8 @@ export async function GET(
   const filtered = {
     ...data,
     add_ons: (data.add_ons as { price: number }[]).filter((a) => a.price > 0),
+    frequency_discounts: ((data.frequency_discounts ?? []) as { enabled: boolean; discount_percentage: number }[])
+      .filter((f) => f.enabled && f.discount_percentage > 0),
   }
 
   return NextResponse.json(filtered, {

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import type { QuoteSettingsRow } from "@/types/database"
-import type { AddOn, Discount, IntervalRange, FlatRange } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount, FrequencyKey } from "@/types/settings"
 import { PREDEFINED_ADD_ONS, PREDEFINED_IDS } from "@/lib/predefined-add-ons"
 import PriserForm from "./PriserForm"
 
@@ -35,6 +35,19 @@ export default async function PriserPage() {
     })(),
     discounts: (row?.discounts ?? []) as unknown as Discount[],
     minimum_price: row?.minimum_price ?? null,
+    frequency_discounts: (() => {
+      const stored = (row?.frequency_discounts ?? []) as unknown as FrequencyDiscount[]
+      const defaults: { frequency: FrequencyKey; label: string }[] = [
+        { frequency: "weekly", label: "Ugentlig" },
+        { frequency: "every2weeks", label: "Hver 2. uge" },
+        { frequency: "every3weeks", label: "Hver 3. uge" },
+        { frequency: "every4weeks", label: "Hver 4. uge" },
+      ]
+      return defaults.map((d) => {
+        const found = stored.find((s) => s.frequency === d.frequency)
+        return found ?? { frequency: d.frequency, discount_percentage: 0, enabled: false }
+      })
+    })(),
   }
 
   return (

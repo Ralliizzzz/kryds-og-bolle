@@ -29,6 +29,14 @@ export interface FlatRange {
 export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun"
 export type OpeningHours = Record<DayKey, { open: string; close: string } | null>
 
+export type FrequencyKey = "weekly" | "every2weeks" | "every3weeks" | "every4weeks"
+
+export interface FrequencyDiscount {
+  frequency: FrequencyKey
+  discount_percentage: number
+  enabled: boolean
+}
+
 export interface QuoteSettingsData {
   pricing_type: "sqm" | "interval"
   price_per_sqm: number | null
@@ -38,4 +46,5 @@ export interface QuoteSettingsData {
   discounts: Discount[]
   minimum_price: number | null
   opening_hours: OpeningHours
+  frequency_discounts: FrequencyDiscount[]
 }

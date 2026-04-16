@@ -1,9 +1,17 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import type { AddOn, Discount, IntervalRange, FlatRange } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount } from "@/types/settings"
 import { savePriser, type PriserData } from "./actions"
 import { PREDEFINED_IDS } from "@/lib/predefined-add-ons"
+import type { FrequencyKey } from "@/types/settings"
+
+const FREQUENCY_LABELS: Record<FrequencyKey, string> = {
+  weekly: "Ugentlig",
+  every2weeks: "Hver 2. uge",
+  every3weeks: "Hver 3. uge",
+  every4weeks: "Hver 4. uge",
+}
 
 interface Props {
   initialData: PriserData
@@ -41,6 +49,13 @@ export default function PriserForm({ initialData }: Props) {
   }
   function removeAddOn(id: string) {
     update("add_ons", data.add_ons.filter((a) => a.id !== id))
+  }
+
+  // ── Hyppighedsrabat ───────────────────────────────────────────────────────
+  function updateFrequency(frequency: FrequencyDiscount["frequency"], field: keyof FrequencyDiscount, value: number | boolean) {
+    update("frequency_discounts", data.frequency_discounts.map((f) =>
+      f.frequency === frequency ? { ...f, [field]: value } : f
+    ))
   }
 
   // ── Rabatter ───────────────────────────────────────────────────────────────
@@ -291,7 +306,44 @@ export default function PriserForm({ initialData }: Props) {
         </button>
       </Section>
 
-      {/* ── 3. Rabatter ── */}
+      {/* ── 3. Hyppighedsrabat ── */}
+      <Section title="Hyppighedsrabat">
+        <p className="text-sm text-gray-500 mb-4">
+          Giv rabat til kunder der bestiller fast rengøring. Sæt 0% for at skjule en frekvens i widget&apos;en.
+        </p>
+        <div className="grid grid-cols-[auto_1fr_140px] gap-x-4 gap-y-2 items-center">
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Aktiv</div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Frekvens</div>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Rabat (%)</div>
+          {data.frequency_discounts.map((f) => (
+            <>
+              <input
+                key={`${f.frequency}-toggle`}
+                type="checkbox"
+                checked={f.enabled}
+                onChange={(e) => updateFrequency(f.frequency, "enabled", e.target.checked)}
+                className="w-4 h-4 accent-blue-500"
+              />
+              <span key={`${f.frequency}-label`} className="text-sm text-gray-700">
+                {FREQUENCY_LABELS[f.frequency]}
+              </span>
+              <input
+                key={`${f.frequency}-pct`}
+                type="number"
+                min="0"
+                max="100"
+                className={input}
+                value={f.discount_percentage}
+                disabled={!f.enabled}
+                onChange={(e) => updateFrequency(f.frequency, "discount_percentage", Number(e.target.value))}
+                placeholder="0"
+              />
+            </>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── 4. Rabatter ── */}
       <Section title="Rabatter">
         <p className="text-sm text-gray-500 mb-3">
           Rabatter kunden kan vælge i widget&apos;en (f.eks. tilbagevendende kunde).

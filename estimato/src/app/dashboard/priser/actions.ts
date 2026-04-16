@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import type { AddOn, Discount, IntervalRange, FlatRange } from "@/types/settings"
+import type { AddOn, Discount, IntervalRange, FlatRange, FrequencyDiscount } from "@/types/settings"
 
 export interface PriserData {
   pricing_type: "sqm" | "interval"
@@ -11,6 +11,7 @@ export interface PriserData {
   add_ons: AddOn[]
   discounts: Discount[]
   minimum_price: number | null
+  frequency_discounts: FrequencyDiscount[]
 }
 
 export async function savePriser(data: PriserData): Promise<{ error?: string }> {
@@ -31,6 +32,7 @@ export async function savePriser(data: PriserData): Promise<{ error?: string }> 
       add_ons: data.add_ons,
       discounts: data.discounts,
       minimum_price: data.minimum_price,
+      frequency_discounts: data.frequency_discounts,
     })
     .eq("company_id", user.id)
 

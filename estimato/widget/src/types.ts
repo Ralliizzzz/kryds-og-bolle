@@ -26,6 +26,14 @@ export interface FlatRange {
   price: number
 }
 
+export type FrequencyKey = "weekly" | "every2weeks" | "every3weeks" | "every4weeks"
+
+export interface FrequencyDiscount {
+  frequency: FrequencyKey
+  discount_percentage: number
+  enabled: boolean
+}
+
 export interface QuoteSettings {
   pricing_type: "sqm" | "interval"
   price_per_sqm: number | null
@@ -34,12 +42,14 @@ export interface QuoteSettings {
   add_ons: AddOn[]
   discounts: Discount[]
   minimum_price: number | null
+  frequency_discounts: FrequencyDiscount[]
 }
 
 export interface PriceBreakdown {
   base: number
   add_ons: { name: string; price: number }[]
   discount: { name: string; value: number } | null
+  frequency_discount: { name: string; value: number } | null
   total: number
 }
 

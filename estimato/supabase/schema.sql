@@ -46,8 +46,10 @@ CREATE TABLE public.quote_settings (
   -- [{id: "uuid", name: "Vinduespolering", price: 200}]
   add_ons         JSONB NOT NULL DEFAULT '[]',
   -- [{id: "uuid", name: "Tilbagevendende kunde", type: "percent"|"fixed", value: 10}]
-  discounts       JSONB NOT NULL DEFAULT '[]',
-  minimum_price   NUMERIC(10,2),
+  discounts             JSONB NOT NULL DEFAULT '[]',
+  minimum_price         NUMERIC(10,2),
+  -- [{frequency: "weekly"|"every2weeks"|"every3weeks"|"every4weeks", discount_percentage: 10, enabled: true}]
+  frequency_discounts   JSONB NOT NULL DEFAULT '[]',
   -- {mon: {open: "08:00", close: "16:00"}, ..., sat: null, sun: null}
   opening_hours   JSONB NOT NULL DEFAULT '{"mon":{"open":"08:00","close":"16:00"},"tue":{"open":"08:00","close":"16:00"},"wed":{"open":"08:00","close":"16:00"},"thu":{"open":"08:00","close":"16:00"},"fri":{"open":"08:00","close":"16:00"},"sat":null,"sun":null}',
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()

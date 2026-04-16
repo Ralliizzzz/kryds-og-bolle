@@ -34,6 +34,7 @@ export interface QuoteSettingsRow {
   discounts: Json
   minimum_price: number | null
   opening_hours: Json
+  frequency_discounts: Json
   updated_at: string
 }
 

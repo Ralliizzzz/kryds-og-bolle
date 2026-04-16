@@ -1,6 +1,6 @@
 import { h, Fragment } from "preact"
 import { useState, useEffect, useRef } from "preact/hooks"
-import type { QuoteSettings, PropertyType, ActionType, Step, PriceBreakdown } from "./types"
+import type { QuoteSettings, PropertyType, ActionType, Step, PriceBreakdown, FrequencyKey } from "./types"
 import { fetchSettings, fetchAddressSuggestions, fetchBBRData, fetchSlots, submitLead } from "./api"
 import { calculatePrice } from "./calc"
 
@@ -29,6 +29,13 @@ const PROPERTY_LABELS: Record<PropertyType, string> = {
   commercial: "Erhverv",
 }
 
+const FREQUENCY_LABELS: Record<FrequencyKey, string> = {
+  weekly: "Ugentlig",
+  every2weeks: "Hver 2. uge",
+  every3weeks: "Hver 3. uge",
+  every4weeks: "Hver 4. uge",
+}
+
 interface AppProps {
   companyId: string
 }
@@ -51,6 +58,7 @@ export default function App({ companyId }: AppProps) {
   // Price step
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
   const [selectedDiscount, setSelectedDiscount] = useState<string | null>(null)
+  const [selectedFrequency, setSelectedFrequency] = useState<FrequencyKey | null>(null)
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null)
 
   // Action step
@@ -100,7 +108,7 @@ export default function App({ companyId }: AppProps) {
 
   function goToPrice() {
     if (!settings || !sqm || Number(sqm) <= 0) return
-    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount)
+    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency)
     setBreakdown(bd)
     setStep("price")
   }
@@ -113,9 +121,9 @@ export default function App({ companyId }: AppProps) {
 
   useEffect(() => {
     if (!settings || !sqm) return
-    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount)
+    const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency)
     setBreakdown(bd)
-  }, [selectedAddOns, selectedDiscount, settings, sqm])
+  }, [selectedAddOns, selectedDiscount, selectedFrequency, settings, sqm])
 
   async function goToContact(chosenAction: ActionType) {
     setAction(chosenAction)
@@ -270,6 +278,12 @@ export default function App({ companyId }: AppProps) {
                 <span style="color:#16a34a;">{breakdown.discount.value.toLocaleString("da-DK")} kr</span>
               </div>
             )}
+            {breakdown.frequency_discount && (
+              <div style={s.priceRow}>
+                <span>Hyppighedsrabat ({breakdown.frequency_discount.name})</span>
+                <span style="color:#16a34a;">{breakdown.frequency_discount.value.toLocaleString("da-DK")} kr</span>
+              </div>
+            )}
             <div style={s.total}>
               <span>I alt</span>
               <span>{breakdown.total.toLocaleString("da-DK")} kr</span>
@@ -289,6 +303,25 @@ export default function App({ companyId }: AppProps) {
                   />
                   <span style="flex:1;">{a.name}</span>
                   <span style="color:#6b7280;">+{a.price.toLocaleString("da-DK")} kr</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {settings.frequency_discounts.length > 0 && (
+            <div style={s.fieldset}>
+              <label style={s.label}>Rengøringsfrekvens</label>
+              {settings.frequency_discounts.map((f) => (
+                <label key={f.frequency} style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;font-size:0.88rem;">
+                  <input
+                    type="radio"
+                    name="frequency"
+                    checked={selectedFrequency === f.frequency}
+                    onChange={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
+                    style="width:16px;height:16px;accent-color:#3b82f6;"
+                  />
+                  <span style="flex:1;">{FREQUENCY_LABELS[f.frequency]}</span>
+                  <span style="color:#16a34a;">-{f.discount_percentage}%</span>
                 </label>
               ))}
             </div>
