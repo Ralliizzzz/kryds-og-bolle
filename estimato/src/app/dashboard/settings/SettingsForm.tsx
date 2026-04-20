@@ -339,7 +339,7 @@ function LocationFields({
           type="number"
           min="0"
           className={input}
-          value={loc.max_distance_km || ""}
+          value={loc.max_distance_km ?? ""}
           onChange={(e) => onUpdate({ ...loc, max_distance_km: Number(e.target.value) })}
           placeholder="F.eks. 30"
         />
