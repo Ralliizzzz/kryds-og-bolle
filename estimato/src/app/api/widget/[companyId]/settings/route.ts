@@ -18,15 +18,15 @@ export async function GET(
     return NextResponse.json({ error: "Virksomhed ikke fundet" }, { status: 404 })
   }
 
-  // Build active locations (must have coordinates and a positive max distance)
+  // Build active locations (must have coordinates; max_distance_km=0 means no limit)
   type RawLoc = { lat?: number | null; lon?: number | null; max_distance_km?: number; name?: string }
   const mainLoc = data.main_location as RawLoc | null
   const branchLocs = (data.branch_locations ?? []) as RawLoc[]
 
   const locations = [
-    ...(mainLoc?.lat && mainLoc?.lon && (mainLoc.max_distance_km ?? 0) > 0 ? [mainLoc] : []),
-    ...branchLocs.filter((b) => b.lat && b.lon && (b.max_distance_km ?? 0) > 0),
-  ].map((l) => ({ name: l.name ?? "", lat: l.lat, lon: l.lon, max_distance_km: l.max_distance_km }))
+    ...(mainLoc?.lat && mainLoc?.lon ? [mainLoc] : []),
+    ...branchLocs.filter((b) => b.lat && b.lon),
+  ].map((l) => ({ name: l.name ?? "", lat: l.lat, lon: l.lon, max_distance_km: l.max_distance_km ?? 0 }))
 
   const { main_location: _ml, branch_locations: _bl, transport_fee: _tf, ...rest } = data as typeof data & { main_location: unknown; branch_locations: unknown; transport_fee: unknown }
 

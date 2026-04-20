@@ -125,7 +125,7 @@ export default function App({ companyId }: AppProps) {
           )
           const nearest = distances.reduce((a, b) => a.km < b.km ? a : b)
           setNearestDistanceKm(nearest.km)
-          setOutOfRange(nearest.km > nearest.loc.max_distance_km)
+          setOutOfRange(nearest.loc.max_distance_km > 0 && nearest.km > nearest.loc.max_distance_km)
         }
       } else {
         // Ingen serviceområde — beregn stadig afstand til transportgebyr
