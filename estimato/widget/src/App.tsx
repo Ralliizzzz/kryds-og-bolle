@@ -391,131 +391,136 @@ export default function App({ companyId }: AppProps) {
           <h2 style={s.h2}>Din pris</h2>
           <p style={s.subtitle}>{addressText}</p>
 
-          {/* Boliginfo */}
-          <div style={`background:${c.gray50};border:1px solid ${c.gray100};border-radius:14px;padding:14px 18px;margin-bottom:22px;`}>
-            <p style={`font-size:0.67rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;`}>
-              Boliginfo fra BBR
-            </p>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;">
-              <InfoPill label="Type" value={PROPERTY_LABELS[propertyType]} />
-              <InfoPill label="Areal" value={`${sqm} m²`} />
-              {bbrFloors != null && <InfoPill label="Plan" value={String(bbrFloors)} />}
-              {bbrRooms != null && <InfoPill label="Rum" value={String(bbrRooms)} />}
-              {bbrBathrooms != null && <InfoPill label="Badeværelse" value={String(bbrBathrooms)} />}
-              {bbrToilets != null && <InfoPill label="Toilet" value={String(bbrToilets)} />}
-            </div>
-          </div>
-
-          {/* Prisspecifikation */}
-          <div style={`border:1.5px solid ${c.gray100};border-radius:14px;overflow:hidden;margin-bottom:22px;`}>
-            <div style={`padding:8px 12px;background:${c.gray50};border-bottom:1px solid ${c.gray100};`}>
-              <span style={`font-size:0.67rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;`}>Prisspecifikation</span>
-            </div>
-            <div style={s.priceRow}>
-              <span style={`color:${c.gray700};`}>Grundpris ({sqm} m²)</span>
-              <span style="font-weight:600;">{breakdown.base.toLocaleString("da-DK")} kr</span>
-            </div>
-            {breakdown.add_ons.map((a) => (
-              <div key={a.name} style={s.priceRow}>
-                <span style={`color:${c.gray700};`}>{a.name}</span>
-                <span style="font-weight:500;">+{a.price.toLocaleString("da-DK")} kr</span>
-              </div>
-            ))}
-            {breakdown.discount && (
-              <div style={s.priceRow}>
-                <span style={`color:${c.gray700};`}>{breakdown.discount.name}</span>
-                <span style={`color:${c.green};font-weight:500;`}>{breakdown.discount.value.toLocaleString("da-DK")} kr</span>
-              </div>
-            )}
-            {breakdown.frequency_discount && (
-              <div style={s.priceRow}>
-                <span style={`color:${c.gray700};`}>Hyppighedsrabat ({breakdown.frequency_discount.name})</span>
-                <span style={`color:${c.green};font-weight:500;`}>{breakdown.frequency_discount.value.toLocaleString("da-DK")} kr</span>
-              </div>
-            )}
-            {breakdown.transport_fee && (
-              <div style={s.priceRow}>
-                <div>
-                  <div style={`color:${c.gray700};`}>Transportgebyr</div>
-                  <div style={`font-size:0.75rem;color:${c.gray400};margin-top:2px;`}>
-                    {breakdown.transport_fee.billable_km} km × {breakdown.transport_fee.price_per_km} kr/km
-                  </div>
+          <div style="display:flex;gap:18px;align-items:flex-start;">
+            {/* Main column */}
+            <div style="flex:1;min-width:0;">
+              {/* Prisspecifikation */}
+              <div style={`border:1.5px solid ${c.gray100};border-radius:14px;overflow:hidden;margin-bottom:22px;`}>
+                <div style={`padding:8px 12px;background:${c.gray50};border-bottom:1px solid ${c.gray100};`}>
+                  <span style={`font-size:0.67rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;`}>Prisspecifikation</span>
                 </div>
-                <span style="font-weight:500;">+{breakdown.transport_fee.amount.toLocaleString("da-DK")} kr</span>
+                <div style={s.priceRow}>
+                  <span style={`color:${c.gray700};`}>Grundpris ({sqm} m²)</span>
+                  <span style="font-weight:600;">{breakdown.base.toLocaleString("da-DK")} kr</span>
+                </div>
+                {breakdown.add_ons.map((a) => (
+                  <div key={a.name} style={s.priceRow}>
+                    <span style={`color:${c.gray700};`}>{a.name}</span>
+                    <span style="font-weight:500;">+{a.price.toLocaleString("da-DK")} kr</span>
+                  </div>
+                ))}
+                {breakdown.discount && (
+                  <div style={s.priceRow}>
+                    <span style={`color:${c.gray700};`}>{breakdown.discount.name}</span>
+                    <span style={`color:${c.green};font-weight:500;`}>{breakdown.discount.value.toLocaleString("da-DK")} kr</span>
+                  </div>
+                )}
+                {breakdown.frequency_discount && (
+                  <div style={s.priceRow}>
+                    <span style={`color:${c.gray700};`}>Hyppighedsrabat ({breakdown.frequency_discount.name})</span>
+                    <span style={`color:${c.green};font-weight:500;`}>{breakdown.frequency_discount.value.toLocaleString("da-DK")} kr</span>
+                  </div>
+                )}
+                {breakdown.transport_fee && (
+                  <div style={s.priceRow}>
+                    <div>
+                      <div style={`color:${c.gray700};`}>Transportgebyr</div>
+                      <div style={`font-size:0.75rem;color:${c.gray400};margin-top:2px;`}>
+                        {breakdown.transport_fee.billable_km} km × {breakdown.transport_fee.price_per_km} kr/km
+                      </div>
+                    </div>
+                    <span style="font-weight:500;">+{breakdown.transport_fee.amount.toLocaleString("da-DK")} kr</span>
+                  </div>
+                )}
+                <div style={`display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:${c.blueLight};border-top:2px solid ${c.blueBorder};`}>
+                  <span style={`font-weight:700;font-size:1rem;color:${c.gray900};`}>I alt inkl. moms</span>
+                  <span style={`font-weight:800;font-size:1.3rem;color:${c.blue};letter-spacing:-0.02em;`}>{breakdown.total.toLocaleString("da-DK")} kr</span>
+                </div>
               </div>
-            )}
-            <div style={`display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:${c.blueLight};border-top:2px solid ${c.blueBorder};`}>
-              <span style={`font-weight:700;font-size:1rem;color:${c.gray900};`}>I alt inkl. moms</span>
-              <span style={`font-weight:800;font-size:1.3rem;color:${c.blue};letter-spacing:-0.02em;`}>{breakdown.total.toLocaleString("da-DK")} kr</span>
+
+              {/* Tilvalg */}
+              {settings.add_ons.filter((a) => a.price > 0).length > 0 && (
+                <div style={s.fieldset}>
+                  <label style={s.label}>Tilvalg</label>
+                  {settings.add_ons.filter((a) => a.price > 0).map((a) => (
+                    <label key={a.id} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedAddOns.includes(a.id)}
+                        onChange={() => toggleAddOn(a.id)}
+                        style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
+                      />
+                      <span style={`flex:1;color:${c.gray700};`}>{a.name}</span>
+                      <span style={`color:${c.gray500};font-weight:500;`}>+{a.price.toLocaleString("da-DK")} kr</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {/* Hyppighedsrabat */}
+              {settings.frequency_discounts.length > 0 && (
+                <div style={s.fieldset}>
+                  <label style={s.label}>Hyppighedsrabat</label>
+                  {settings.frequency_discounts.map((f) => (
+                    <label key={f.frequency} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
+                      <input
+                        type="radio"
+                        name="frequency"
+                        checked={selectedFrequency === f.frequency}
+                        onClick={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
+                        onChange={() => {}}
+                        style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
+                      />
+                      <span style={`flex:1;color:${c.gray700};`}>{FREQUENCY_LABELS[f.frequency]}</span>
+                      <span style={`color:${c.green};font-weight:600;`}>-{f.discount_percentage}%</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {/* Rabatter */}
+              {settings.discounts.length > 0 && (
+                <div style={s.fieldset}>
+                  <label style={s.label}>Rabat</label>
+                  {settings.discounts.map((d) => (
+                    <label key={d.id} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
+                      <input
+                        type="radio"
+                        name="discount"
+                        checked={selectedDiscount === d.id}
+                        onClick={() => setSelectedDiscount(selectedDiscount === d.id ? null : d.id)}
+                        onChange={() => {}}
+                        style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
+                      />
+                      <span style={`flex:1;color:${c.gray700};`}>{d.name}</span>
+                      <span style={`color:${c.green};font-weight:600;`}>
+                        {d.type === "percent" ? `-${d.value}%` : `-${d.value.toLocaleString("da-DK")} kr`}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              <button style={s.btn} onClick={() => setStep("action")}>
+                Gå videre →
+              </button>
+            </div>
+
+            {/* Sidebar: Boliginfo */}
+            <div style={`width:160px;flex-shrink:0;background:${c.gray50};border:1px solid ${c.gray100};border-radius:12px;padding:12px;`}>
+              <p style={`font-size:0.62rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;`}>
+                Boliginfo
+              </p>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <InfoPill label="Type" value={PROPERTY_LABELS[propertyType]} />
+                <InfoPill label="Areal" value={`${sqm} m²`} />
+                {bbrFloors != null && <InfoPill label="Plan" value={String(bbrFloors)} />}
+                {bbrRooms != null && <InfoPill label="Rum" value={String(bbrRooms)} />}
+                {bbrBathrooms != null && <InfoPill label="Badeværelse" value={String(bbrBathrooms)} />}
+                {bbrToilets != null && <InfoPill label="Toilet" value={String(bbrToilets)} />}
+              </div>
             </div>
           </div>
-
-          {/* Tilvalg */}
-          {settings.add_ons.filter((a) => a.price > 0).length > 0 && (
-            <div style={s.fieldset}>
-              <label style={s.label}>Tilvalg</label>
-              {settings.add_ons.filter((a) => a.price > 0).map((a) => (
-                <label key={a.id} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
-                  <input
-                    type="checkbox"
-                    checked={selectedAddOns.includes(a.id)}
-                    onChange={() => toggleAddOn(a.id)}
-                    style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
-                  />
-                  <span style={`flex:1;color:${c.gray700};`}>{a.name}</span>
-                  <span style={`color:${c.gray500};font-weight:500;`}>+{a.price.toLocaleString("da-DK")} kr</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {/* Hyppighedsrabat */}
-          {settings.frequency_discounts.length > 0 && (
-            <div style={s.fieldset}>
-              <label style={s.label}>Hyppighedsrabat</label>
-              {settings.frequency_discounts.map((f) => (
-                <label key={f.frequency} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
-                  <input
-                    type="radio"
-                    name="frequency"
-                    checked={selectedFrequency === f.frequency}
-                    onClick={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
-                    onChange={() => {}}
-                    style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
-                  />
-                  <span style={`flex:1;color:${c.gray700};`}>{FREQUENCY_LABELS[f.frequency]}</span>
-                  <span style={`color:${c.green};font-weight:600;`}>-{f.discount_percentage}%</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {/* Rabatter */}
-          {settings.discounts.length > 0 && (
-            <div style={s.fieldset}>
-              <label style={s.label}>Rabat</label>
-              {settings.discounts.map((d) => (
-                <label key={d.id} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
-                  <input
-                    type="radio"
-                    name="discount"
-                    checked={selectedDiscount === d.id}
-                    onClick={() => setSelectedDiscount(selectedDiscount === d.id ? null : d.id)}
-                    onChange={() => {}}
-                    style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
-                  />
-                  <span style={`flex:1;color:${c.gray700};`}>{d.name}</span>
-                  <span style={`color:${c.green};font-weight:600;`}>
-                    {d.type === "percent" ? `-${d.value}%` : `-${d.value.toLocaleString("da-DK")} kr`}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          <button style={s.btn} onClick={() => setStep("action")}>
-            Gå videre →
-          </button>
         </>
       )}
 
