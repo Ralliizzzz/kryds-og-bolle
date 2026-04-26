@@ -104,19 +104,8 @@ export default function EmbedClient({ companyId }: { companyId: string; appUrl: 
         <h2 className="text-base font-semibold text-gray-900 mb-1">Forhåndsvisning</h2>
         <p className="text-sm text-gray-500 mb-5">Sådan ser beregneren ud for dine kunder.</p>
 
-        {/* Browser chrome */}
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <div className="bg-gray-100 border-b border-gray-200 px-4 py-2.5 flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-400" />
-            <div className="w-3 h-3 rounded-full bg-amber-400" />
-            <div className="w-3 h-3 rounded-full bg-emerald-400" />
-            <div className="ml-3 flex-1 bg-white border border-gray-200 rounded-md px-3 py-1 text-xs text-gray-400 truncate">
-              dinhjemmeside.dk
-            </div>
-          </div>
-          <div className="bg-gray-50 p-6 flex justify-center">
-            <div id="lead-widget" data-company={companyId} />
-          </div>
+        <div className="bg-gray-50 rounded-xl p-6 flex justify-center">
+          <div id="lead-widget" data-company={companyId} />
         </div>
       </div>
 

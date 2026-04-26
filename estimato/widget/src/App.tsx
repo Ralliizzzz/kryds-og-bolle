@@ -4,24 +4,43 @@ import type { QuoteSettings, PropertyType, ActionType, Step, PriceBreakdown, Fre
 import { fetchSettings, fetchAddressSuggestions, fetchBBRData, fetchSlots, submitLead } from "./api"
 import { calculatePrice } from "./calc"
 
-// ─── Styles ────────────────────────────────────────────────────────────────
-const s = {
-  wrap: "font-family:Inter,system-ui,sans-serif;max-width:700px;width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px;box-sizing:border-box;",
-  h2: "font-size:1.1rem;font-weight:700;margin:0 0 16px;color:#111;",
-  label: "display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:4px;",
-  input: "width:100%;border:1px solid #d1d5db;border-radius:8px;padding:10px 12px;font-size:0.9rem;box-sizing:border-box;outline:none;",
-  inputFocus: "border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.15);",
-  btn: "width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;margin-top:16px;",
-  btnSecondary: "width:100%;background:#f9fafb;color:#374151;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:0.9rem;font-weight:600;cursor:pointer;margin-top:8px;",
-  error: "color:#ef4444;font-size:0.8rem;margin-top:4px;",
-  badge: "font-size:0.75rem;padding:2px 8px;border-radius:999px;font-weight:600;",
-  priceRow: "display:flex;justify-content:space-between;font-size:0.9rem;padding:6px 0;border-bottom:1px solid #f3f4f6;",
-  total: "display:flex;justify-content:space-between;font-size:1.1rem;font-weight:700;padding:10px 0;",
-  actionCard: "border:2px solid #e5e7eb;border-radius:12px;padding:16px;cursor:pointer;margin-bottom:8px;transition:border-color 0.15s;",
-  actionCardActive: "border-color:#3b82f6;background:#eff6ff;",
-  fieldset: "margin-bottom:14px;",
-  hint: "font-size:0.78rem;color:#6b7280;margin-top:4px;",
+// ─── Design tokens ─────────────────────────────────────────────────────────
+const c = {
+  blue: "#2563eb",
+  blueLight: "#eff6ff",
+  blueBorder: "#93c5fd",
+  gray50: "#f9fafb",
+  gray100: "#f3f4f6",
+  gray200: "#e5e7eb",
+  gray400: "#9ca3af",
+  gray500: "#6b7280",
+  gray700: "#374151",
+  gray900: "#111827",
+  green: "#16a34a",
+  greenLight: "#f0fdf4",
+  red: "#dc2626",
+  redLight: "#fef2f2",
+  redBorder: "#fecaca",
 }
+
+const font = "Inter,'Segoe UI',system-ui,sans-serif"
+
+const s = {
+  wrap: `font-family:${font};max-width:800px;width:100%;background:#fff;border:1px solid ${c.gray200};border-radius:22px;padding:40px;box-sizing:border-box;color:${c.gray900};box-shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.04);`,
+  label: `display:block;font-size:0.7rem;font-weight:700;color:${c.gray400};margin-bottom:8px;text-transform:uppercase;letter-spacing:0.07em;`,
+  input: `width:100%;border:1.5px solid ${c.gray200};border-radius:12px;padding:13px 16px;font-size:0.93rem;box-sizing:border-box;outline:none;font-family:${font};color:${c.gray900};background:#fff;transition:border-color 0.15s;`,
+  btn: `width:100%;background:${c.blue};color:#fff;border:none;border-radius:12px;padding:15px 24px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:18px;font-family:${font};letter-spacing:0.01em;`,
+  btnDisabled: "opacity:0.4;cursor:not-allowed;",
+  btnBack: `background:none;border:none;color:${c.gray400};font-size:0.82rem;cursor:pointer;padding:0;margin-bottom:24px;font-family:${font};display:flex;align-items:center;gap:5px;`,
+  fieldset: "margin-bottom:20px;",
+  hint: `font-size:0.78rem;color:${c.gray400};margin-top:6px;`,
+  error: `color:${c.red};font-size:0.85rem;padding:12px 16px;background:${c.redLight};border:1px solid ${c.redBorder};border-radius:10px;margin-top:10px;`,
+  priceRow: `display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;padding:11px 18px;border-bottom:1px solid ${c.gray100};`,
+  h2: `font-size:1.4rem;font-weight:800;margin:0 0 5px;color:${c.gray900};letter-spacing:-0.02em;`,
+  subtitle: `font-size:0.87rem;color:${c.gray500};margin:0 0 26px;line-height:1.5;`,
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371
@@ -44,12 +63,54 @@ const FREQUENCY_LABELS: Record<FrequencyKey, string> = {
   every4weeks: "Hver 4. uge",
 }
 
-function PropertyInfoRow({ label, value }: { label: string; value: string }) {
+const STEP_NUM: Record<Step, number> = {
+  address: 1, price: 2, action: 3, contact: 4, confirmation: 4,
+}
+
+// ─── Sub-components ────────────────────────────────────────────────────────
+
+const STEP_LABELS = ["Adresse", "Pris", "Handling", "Kontakt"]
+
+function Progress({ step }: { step: Step }) {
+  const n = STEP_NUM[step]
+  const done = step === "confirmation"
   return (
-    <div style="display:flex;flex-direction:column;margin-bottom:8px;">
-      <span style="font-size:0.68rem;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">{label}</span>
-      <span style="font-size:0.82rem;color:#111;font-weight:500;margin-top:1px;">{value}</span>
+    <div style={`margin-bottom:32px;padding-bottom:28px;border-bottom:1px solid ${c.gray100};`}>
+      <div style="display:flex;gap:0;margin-bottom:8px;">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} style="flex:1;display:flex;align-items:center;">
+            <div style={`flex:1;height:3px;border-radius:2px;background:${done || i <= n ? c.blue : c.gray200};transition:background 0.25s;`} />
+          </div>
+        ))}
+      </div>
+      <div style="display:flex;">
+        {STEP_LABELS.map((label, i) => {
+          const idx = i + 1
+          const active = idx === n && !done
+          const completed = done || idx < n
+          return (
+            <div key={label} style="flex:1;display:flex;flex-direction:column;align-items:center;">
+              <div style={`width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;margin-bottom:4px;${
+                completed ? `background:${c.blue};color:#fff;` : active ? `background:${c.blue};color:#fff;` : `background:${c.gray100};color:${c.gray400};`
+              }`}>
+                {completed && idx < n ? (
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                ) : String(idx)}
+              </div>
+              <span style={`font-size:0.67rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:${active || completed ? c.blue : c.gray400};`}>{label}</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
+  )
+}
+
+function BackBtn({ onClick }: { onClick: () => void }) {
+  return (
+    <button style={s.btnBack} onClick={onClick}>
+      ← Tilbage
+    </button>
   )
 }
 
@@ -62,7 +123,7 @@ export default function App({ companyId }: AppProps) {
   const [settings, setSettings] = useState<QuoteSettings | null>(null)
   const [loadError, setLoadError] = useState(false)
 
-  // Address step
+  // Address
   const [addressText, setAddressText] = useState("")
   const [addressId, setAddressId] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<{ text: string; id: string }[]>([])
@@ -80,18 +141,18 @@ export default function App({ companyId }: AppProps) {
   const [bbrFloors, setBbrFloors] = useState<number | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Price step
+  // Price
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
   const [selectedDiscount, setSelectedDiscount] = useState<string | null>(null)
   const [selectedFrequency, setSelectedFrequency] = useState<FrequencyKey | null>(null)
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null)
 
-  // Action step
+  // Action
   const [action, setAction] = useState<ActionType | null>(null)
   const [slots, setSlots] = useState<string[]>([])
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
 
-  // Contact step
+  // Contact
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -102,7 +163,6 @@ export default function App({ companyId }: AppProps) {
     fetchSettings(companyId).then(setSettings).catch(() => setLoadError(true))
   }, [companyId])
 
-  // Adresse autocomplete
   function onAddressInput(val: string) {
     setAddressText(val)
     setAddressId(null)
@@ -131,7 +191,6 @@ export default function App({ companyId }: AppProps) {
       setCustomerLat(bbr.lat)
       setCustomerLon(bbr.lon)
 
-      // Afstandstjek + gem nærmeste afstand til transportgebyr
       if (settings?.locations && settings.locations.length > 0) {
         if (!bbr.lat || !bbr.lon) {
           setOutOfRange(true)
@@ -145,23 +204,18 @@ export default function App({ companyId }: AppProps) {
           setOutOfRange(nearest.loc.max_distance_km > 0 && nearest.km > nearest.loc.max_distance_km)
         }
       } else {
-        // Ingen serviceområde — beregn stadig afstand til transportgebyr
         if (bbr.lat && bbr.lon && settings?.locations?.length === 0) {
           setNearestDistanceKm(null)
         }
         setOutOfRange(false)
       }
-    } catch {
-      // BBR fejlede — brugeren angiver manuelt
-    } finally {
+    } catch { /* ignore */ } finally {
       setBbrLoading(false)
     }
   }
 
   function goToPrice() {
-    if (!settings || !sqm || Number(sqm) <= 0) return
-    if (outOfRange) return
-
+    if (!settings || !sqm || Number(sqm) <= 0 || outOfRange) return
     const bd = calculatePrice(Number(sqm), settings, selectedAddOns, selectedDiscount, selectedFrequency, nearestDistanceKm)
     setBreakdown(bd)
     setStep("price")
@@ -193,14 +247,11 @@ export default function App({ companyId }: AppProps) {
     if (action === "book" && !selectedSlot) return
     if (action !== "callback" && !email) return
     if (!phone) return
-
     setSubmitting(true)
     setSubmitError(null)
     try {
       await submitLead(companyId, {
-        name,
-        email: email || undefined,
-        phone,
+        name, email: email || undefined, phone,
         address: addressText,
         sqm: Number(sqm) || undefined,
         property_type: propertyType,
@@ -220,7 +271,7 @@ export default function App({ companyId }: AppProps) {
   if (loadError) {
     return (
       <div style={s.wrap}>
-        <p style="color:#ef4444;font-size:0.9rem;">Kunne ikke indlæse widget. Prøv igen.</p>
+        <p style={`color:${c.red};font-size:0.9rem;`}>Kunne ikke indlæse widget. Prøv igen.</p>
       </div>
     )
   }
@@ -228,53 +279,70 @@ export default function App({ companyId }: AppProps) {
   if (!settings) {
     return (
       <div style={s.wrap}>
-        <p style="color:#9ca3af;font-size:0.9rem;">Indlæser...</p>
+        <div style={`display:flex;align-items:center;gap:10px;color:${c.gray400};font-size:0.88rem;`}>
+          <span>Indlæser...</span>
+        </div>
       </div>
     )
   }
 
+  const canProceedAddress = !!(addressText && sqm && Number(sqm) > 0 && !outOfRange)
+
   return (
     <div style={s.wrap}>
-      {/* ── Step: Address ── */}
+      <Progress step={step} />
+
+      {/* ── Step: Address ─────────────────────────────────────────── */}
       {step === "address" && (
         <>
-          <h2 style={s.h2}>Få din pris</h2>
+          <h2 style={s.h2}>Beregn din pris</h2>
+          <p style={s.subtitle}>Tast din adresse og vi henter resten fra BBR automatisk.</p>
 
-          <div style={s.fieldset} tabIndex={-1} onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}>
-            <label style={s.label}>Adresse</label>
-            <input
-              style={s.input}
-              type="text"
-              placeholder="Indtast adresse..."
-              value={addressText}
-              onInput={(e) => onAddressInput((e.target as HTMLInputElement).value)}
-              onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-              autoComplete="off"
-            />
-            {showSuggestions && (
-              <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;background:#fff;position:absolute;z-index:99;width:100%;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-                {suggestions.map((s) => (
-                  <div
-                    key={s.id}
-                    style="padding:10px 12px;font-size:0.85rem;cursor:pointer;border-bottom:1px solid #f3f4f6;"
-                    onMouseDown={() => onSelectSuggestion(s)}
-                  >
-                    {s.text}
-                  </div>
-                ))}
-              </div>
-            )}
-            {bbrLoading && <p style={s.hint}>Henter ejendomsdata...</p>}
+          {/* Adresse */}
+          <div style={s.fieldset}>
+            <div
+              style="position:relative;"
+              tabIndex={-1}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            >
+              <label style={s.label}>Adresse</label>
+              <input
+                style={s.input}
+                type="text"
+                placeholder="Indtast din adresse..."
+                value={addressText}
+                onInput={(e) => onAddressInput((e.target as HTMLInputElement).value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                autoComplete="off"
+              />
+              {bbrLoading && (
+                <p style={s.hint}>Henter ejendomsdata fra BBR...</p>
+              )}
+              {showSuggestions && suggestions.length > 0 && (
+                <div style={`position:absolute;z-index:99;width:100%;background:#fff;border:1.5px solid ${c.gray200};border-top:none;border-radius:0 0 10px 10px;box-shadow:0 8px 16px rgba(0,0,0,0.08);`}>
+                  {suggestions.map((sg) => (
+                    <div
+                      key={sg.id}
+                      style={`padding:11px 14px;font-size:0.87rem;cursor:pointer;border-bottom:1px solid ${c.gray100};color:${c.gray700};`}
+                      onMouseDown={() => onSelectSuggestion(sg)}
+                    >
+                      {sg.text}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Ejendomstype */}
           <div style={s.fieldset}>
             <label style={s.label}>Ejendomstype</label>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              {(["house", "apartment", "commercial"] as PropertyType[]).map((t) => (
+            <div style={`display:flex;border:1.5px solid ${c.gray200};border-radius:10px;overflow:hidden;`}>
+              {(["house", "apartment", "commercial"] as PropertyType[]).map((t, i) => (
                 <button
                   key={t}
-                  style={`border:2px solid ${propertyType === t ? "#3b82f6" : "#e5e7eb"};background:${propertyType === t ? "#eff6ff" : "#fff"};color:${propertyType === t ? "#1d4ed8" : "#374151"};border-radius:8px;padding:8px 14px;font-size:0.83rem;font-weight:600;cursor:pointer;`}
                   onClick={() => setPropertyType(t)}
+                  style={`flex:1;padding:10px 6px;border:none;${i < 2 ? `border-right:1px solid ${c.gray200};` : ""}background:${propertyType === t ? c.blueLight : "#fff"};color:${propertyType === t ? c.blue : c.gray500};font-size:0.83rem;font-weight:600;cursor:pointer;font-family:${font};transition:background 0.1s;`}
                 >
                   {PROPERTY_LABELS[t]}
                 </button>
@@ -282,6 +350,7 @@ export default function App({ companyId }: AppProps) {
             </div>
           </div>
 
+          {/* Størrelse */}
           <div style={s.fieldset}>
             <label style={s.label}>Størrelse (m²)</label>
             <input
@@ -297,15 +366,17 @@ export default function App({ companyId }: AppProps) {
             )}
           </div>
 
+          {/* Uden for serviceområde */}
           {outOfRange && (
-            <p style="color:#ef4444;font-size:0.85rem;margin-bottom:8px;padding:10px 12px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca;">
-              Vi kører desværre ikke til din adresse. Kontakt os direkte for et tilbud.
-            </p>
+            <div style={`padding:12px 14px;background:${c.redLight};border:1px solid ${c.redBorder};border-radius:10px;margin-bottom:12px;`}>
+              <p style={`color:${c.red};font-size:0.85rem;margin:0;font-weight:600;`}>Udenfor serviceområde</p>
+              <p style={`color:${c.red};font-size:0.82rem;margin:4px 0 0;opacity:0.85;`}>Vi kører desværre ikke til din adresse. Kontakt os direkte for et tilbud.</p>
+            </div>
           )}
 
           <button
-            style={s.btn + ((!addressText || !sqm || outOfRange) ? "opacity:0.5;" : "")}
-            disabled={!addressText || !sqm || outOfRange}
+            style={s.btn + (!canProceedAddress ? s.btnDisabled : "")}
+            disabled={!canProceedAddress}
             onClick={goToPrice}
           >
             Se min pris →
@@ -313,175 +384,179 @@ export default function App({ companyId }: AppProps) {
         </>
       )}
 
-      {/* ── Step: Price ── */}
+      {/* ── Step: Price ───────────────────────────────────────────── */}
       {step === "price" && breakdown && (
         <>
-          <button style="background:none;border:none;color:#6b7280;font-size:0.83rem;cursor:pointer;padding:0;margin-bottom:16px;" onClick={() => setStep("address")}>
-            ← Tilbage
-          </button>
+          <BackBtn onClick={() => setStep("address")} />
+          <h2 style={s.h2}>Din pris</h2>
+          <p style={s.subtitle}>{addressText}</p>
 
-          <div style="display:flex;gap:20px;align-items:flex-start;">
-
-            {/* ── Boliginfo sidebar ── */}
-            <div style="flex:0 0 180px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;font-size:0.82rem;">
-              <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 10px;">Boliginfo</p>
-              <PropertyInfoRow label="Ejendomstype" value={PROPERTY_LABELS[propertyType]} />
-              <PropertyInfoRow label="Areal" value={`${sqm} m²`} />
-              {bbrFloors != null && <PropertyInfoRow label="Antal plan" value={String(bbrFloors)} />}
-              {bbrRooms != null && <PropertyInfoRow label="Værelser" value={String(bbrRooms)} />}
-              {(bbrToilets != null || bbrBathrooms != null) && (
-                <PropertyInfoRow
-                  label="Toilet / bad"
-                  value={[bbrToilets != null ? `${bbrToilets} toilet` : null, bbrBathrooms != null ? `${bbrBathrooms} bad` : null].filter(Boolean).join(" · ")}
-                />
-              )}
-              <p style="font-size:0.7rem;color:#d1d5db;margin:10px 0 0;line-height:1.3;">Data fra BBR</p>
-            </div>
-
-            {/* ── Prisindhold ── */}
-            <div style="flex:1;min-width:0;">
-              <h2 style={s.h2}>Din pris</h2>
-
-              <div style="margin-bottom:16px;">
-                <div style={s.priceRow}>
-                  <span>Grundpris ({sqm} m²)</span>
-                  <span>{breakdown.base.toLocaleString("da-DK")} kr</span>
-                </div>
-                {breakdown.add_ons.map((a) => (
-                  <div key={a.name} style={s.priceRow}>
-                    <span>{a.name}</span>
-                    <span>+{a.price.toLocaleString("da-DK")} kr</span>
-                  </div>
-                ))}
-                {breakdown.discount && (
-                  <div style={s.priceRow}>
-                    <span>{breakdown.discount.name}</span>
-                    <span style="color:#16a34a;">{breakdown.discount.value.toLocaleString("da-DK")} kr</span>
-                  </div>
-                )}
-                {breakdown.frequency_discount && (
-                  <div style={s.priceRow}>
-                    <span>Hyppighedsrabat ({breakdown.frequency_discount.name})</span>
-                    <span style="color:#16a34a;">{breakdown.frequency_discount.value.toLocaleString("da-DK")} kr</span>
-                  </div>
-                )}
-                {breakdown.transport_fee && (
-                  <div style={s.priceRow}>
-                    <div>
-                      <div>Transportgebyr</div>
-                      <div style="font-size:0.75rem;color:#9ca3af;margin-top:2px;">
-                        {breakdown.transport_fee.distance_km} km afstand · {breakdown.transport_fee.billable_km} km fakturerbart × {breakdown.transport_fee.price_per_km} kr/km
-                      </div>
-                    </div>
-                    <span style="white-space:nowrap;">+{breakdown.transport_fee.amount.toLocaleString("da-DK")} kr</span>
-                  </div>
-                )}
-                <div style={s.total}>
-                  <span>I alt</span>
-                  <span>{breakdown.total.toLocaleString("da-DK")} kr</span>
-                </div>
-              </div>
-
-              {settings.add_ons.filter((a) => a.price > 0).length > 0 && (
-                <div style={s.fieldset}>
-                  <label style={s.label}>Tilvalg</label>
-                  {settings.add_ons.filter((a) => a.price > 0).map((a) => (
-                    <label key={a.id} style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;font-size:0.88rem;">
-                      <input
-                        type="checkbox"
-                        checked={selectedAddOns.includes(a.id)}
-                        onChange={() => toggleAddOn(a.id)}
-                        style="width:16px;height:16px;accent-color:#3b82f6;"
-                      />
-                      <span style="flex:1;">{a.name}</span>
-                      <span style="color:#6b7280;">+{a.price.toLocaleString("da-DK")} kr</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              {settings.frequency_discounts.length > 0 && (
-                <div style={s.fieldset}>
-                  <label style={s.label}>Hyppighedsrabat</label>
-                  {settings.frequency_discounts.map((f) => (
-                    <label key={f.frequency} style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;font-size:0.88rem;">
-                      <input
-                        type="radio"
-                        name="frequency"
-                        checked={selectedFrequency === f.frequency}
-                        onClick={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
-                        onChange={() => {}}
-                        style="width:16px;height:16px;accent-color:#3b82f6;"
-                      />
-                      <span style="flex:1;">{FREQUENCY_LABELS[f.frequency]}</span>
-                      <span style="color:#16a34a;">-{f.discount_percentage}%</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              {settings.discounts.length > 0 && (
-                <div style={s.fieldset}>
-                  <label style={s.label}>Rabat</label>
-                  {settings.discounts.map((d) => (
-                    <label key={d.id} style="display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;font-size:0.88rem;">
-                      <input
-                        type="radio"
-                        name="discount"
-                        checked={selectedDiscount === d.id}
-                        onClick={() => setSelectedDiscount(selectedDiscount === d.id ? null : d.id)}
-                        onChange={() => {}}
-                        style="width:16px;height:16px;accent-color:#3b82f6;"
-                      />
-                      <span style="flex:1;">{d.name}</span>
-                      <span style="color:#16a34a;">
-                        {d.type === "percent" ? `-${d.value}%` : `-${d.value.toLocaleString("da-DK")} kr`}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              <button style={s.btn} onClick={() => setStep("action")}>
-                Gå videre →
-              </button>
+          {/* Boliginfo */}
+          <div style={`background:${c.gray50};border:1px solid ${c.gray100};border-radius:14px;padding:14px 18px;margin-bottom:22px;`}>
+            <p style={`font-size:0.67rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;`}>
+              Boliginfo fra BBR
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;">
+              <InfoPill label="Type" value={PROPERTY_LABELS[propertyType]} />
+              <InfoPill label="Areal" value={`${sqm} m²`} />
+              {bbrFloors != null && <InfoPill label="Plan" value={String(bbrFloors)} />}
+              {bbrRooms != null && <InfoPill label="Rum" value={String(bbrRooms)} />}
+              {bbrBathrooms != null && <InfoPill label="Badeværelse" value={String(bbrBathrooms)} />}
+              {bbrToilets != null && <InfoPill label="Toilet" value={String(bbrToilets)} />}
             </div>
           </div>
+
+          {/* Prisspecifikation */}
+          <div style={`border:1.5px solid ${c.gray100};border-radius:14px;overflow:hidden;margin-bottom:22px;`}>
+            <div style={`padding:8px 12px;background:${c.gray50};border-bottom:1px solid ${c.gray100};`}>
+              <span style={`font-size:0.67rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;`}>Prisspecifikation</span>
+            </div>
+            <div style={s.priceRow}>
+              <span style={`color:${c.gray700};`}>Grundpris ({sqm} m²)</span>
+              <span style="font-weight:600;">{breakdown.base.toLocaleString("da-DK")} kr</span>
+            </div>
+            {breakdown.add_ons.map((a) => (
+              <div key={a.name} style={s.priceRow}>
+                <span style={`color:${c.gray700};`}>{a.name}</span>
+                <span style="font-weight:500;">+{a.price.toLocaleString("da-DK")} kr</span>
+              </div>
+            ))}
+            {breakdown.discount && (
+              <div style={s.priceRow}>
+                <span style={`color:${c.gray700};`}>{breakdown.discount.name}</span>
+                <span style={`color:${c.green};font-weight:500;`}>{breakdown.discount.value.toLocaleString("da-DK")} kr</span>
+              </div>
+            )}
+            {breakdown.frequency_discount && (
+              <div style={s.priceRow}>
+                <span style={`color:${c.gray700};`}>Hyppighedsrabat ({breakdown.frequency_discount.name})</span>
+                <span style={`color:${c.green};font-weight:500;`}>{breakdown.frequency_discount.value.toLocaleString("da-DK")} kr</span>
+              </div>
+            )}
+            {breakdown.transport_fee && (
+              <div style={s.priceRow}>
+                <div>
+                  <div style={`color:${c.gray700};`}>Transportgebyr</div>
+                  <div style={`font-size:0.75rem;color:${c.gray400};margin-top:2px;`}>
+                    {breakdown.transport_fee.billable_km} km × {breakdown.transport_fee.price_per_km} kr/km
+                  </div>
+                </div>
+                <span style="font-weight:500;">+{breakdown.transport_fee.amount.toLocaleString("da-DK")} kr</span>
+              </div>
+            )}
+            <div style={`display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:${c.blueLight};border-top:2px solid ${c.blueBorder};`}>
+              <span style={`font-weight:700;font-size:1rem;color:${c.gray900};`}>I alt inkl. moms</span>
+              <span style={`font-weight:800;font-size:1.3rem;color:${c.blue};letter-spacing:-0.02em;`}>{breakdown.total.toLocaleString("da-DK")} kr</span>
+            </div>
+          </div>
+
+          {/* Tilvalg */}
+          {settings.add_ons.filter((a) => a.price > 0).length > 0 && (
+            <div style={s.fieldset}>
+              <label style={s.label}>Tilvalg</label>
+              {settings.add_ons.filter((a) => a.price > 0).map((a) => (
+                <label key={a.id} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
+                  <input
+                    type="checkbox"
+                    checked={selectedAddOns.includes(a.id)}
+                    onChange={() => toggleAddOn(a.id)}
+                    style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
+                  />
+                  <span style={`flex:1;color:${c.gray700};`}>{a.name}</span>
+                  <span style={`color:${c.gray500};font-weight:500;`}>+{a.price.toLocaleString("da-DK")} kr</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* Hyppighedsrabat */}
+          {settings.frequency_discounts.length > 0 && (
+            <div style={s.fieldset}>
+              <label style={s.label}>Hyppighedsrabat</label>
+              {settings.frequency_discounts.map((f) => (
+                <label key={f.frequency} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
+                  <input
+                    type="radio"
+                    name="frequency"
+                    checked={selectedFrequency === f.frequency}
+                    onClick={() => setSelectedFrequency(selectedFrequency === f.frequency ? null : f.frequency)}
+                    onChange={() => {}}
+                    style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
+                  />
+                  <span style={`flex:1;color:${c.gray700};`}>{FREQUENCY_LABELS[f.frequency]}</span>
+                  <span style={`color:${c.green};font-weight:600;`}>-{f.discount_percentage}%</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* Rabatter */}
+          {settings.discounts.length > 0 && (
+            <div style={s.fieldset}>
+              <label style={s.label}>Rabat</label>
+              {settings.discounts.map((d) => (
+                <label key={d.id} style={`display:flex;align-items:center;gap:10px;padding:9px 0;cursor:pointer;font-size:0.88rem;border-bottom:1px solid ${c.gray100};`}>
+                  <input
+                    type="radio"
+                    name="discount"
+                    checked={selectedDiscount === d.id}
+                    onClick={() => setSelectedDiscount(selectedDiscount === d.id ? null : d.id)}
+                    onChange={() => {}}
+                    style={`width:16px;height:16px;accent-color:${c.blue};flex-shrink:0;`}
+                  />
+                  <span style={`flex:1;color:${c.gray700};`}>{d.name}</span>
+                  <span style={`color:${c.green};font-weight:600;`}>
+                    {d.type === "percent" ? `-${d.value}%` : `-${d.value.toLocaleString("da-DK")} kr`}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <button style={s.btn} onClick={() => setStep("action")}>
+            Gå videre →
+          </button>
         </>
       )}
 
-      {/* ── Step: Action ── */}
+      {/* ── Step: Action ──────────────────────────────────────────── */}
       {step === "action" && breakdown && (
         <>
-          <button style="background:none;border:none;color:#6b7280;font-size:0.83rem;cursor:pointer;padding:0;margin-bottom:12px;" onClick={() => setStep("price")}>
-            ← Tilbage
-          </button>
+          <BackBtn onClick={() => setStep("price")} />
           <h2 style={s.h2}>Hvad vil du gøre?</h2>
-          <p style="font-size:0.88rem;color:#6b7280;margin-bottom:16px;">
-            Din pris: <strong style="color:#111;">{breakdown.total.toLocaleString("da-DK")} kr</strong>
+          <p style={s.subtitle}>
+            Din pris: <strong style={`color:${c.blue};`}>{breakdown.total.toLocaleString("da-DK")} kr</strong>
           </p>
 
-          {(["book", "callback", "email"] as ActionType[]).map((a) => (
-            <div
-              key={a}
-              style={s.actionCard + (action === a ? s.actionCardActive : "")}
-              onClick={() => setAction(a)}
-            >
-              <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">
-                {a === "book" ? "📅 Book tid" : a === "callback" ? "📞 Bliv ringet op" : "📧 Modtag tilbud på email"}
+          {(["book", "callback", "email"] as ActionType[]).map((a) => {
+            const meta = {
+              book: { icon: "📅", title: "Book tid", desc: "Vælg en ledig tid direkte i kalenderen" },
+              callback: { icon: "📞", title: "Bliv ringet op", desc: "Vi ringer dig op for at aftale nærmere" },
+              email: { icon: "📧", title: "Modtag tilbud på email", desc: "Tilbuddet sendes til din indbakke" },
+            }[a]
+            const active = action === a
+            return (
+              <div
+                key={a}
+                onClick={() => setAction(a)}
+                style={`border:2px solid ${active ? c.blue : c.gray200};background:${active ? c.blueLight : "#fff"};border-radius:14px;padding:16px 20px;cursor:pointer;margin-bottom:10px;transition:border-color 0.15s,background 0.15s;`}
+              >
+                <div style={`display:flex;align-items:center;gap:14px;`}>
+                  <span style={`font-size:1.5rem;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:${active ? "#fff" : c.gray50};border-radius:10px;flex-shrink:0;`}>{meta.icon}</span>
+                  <div style="flex:1;">
+                    <div style={`font-weight:700;font-size:0.95rem;color:${active ? c.blue : c.gray900};margin-bottom:3px;`}>{meta.title}</div>
+                    <div style={`font-size:0.82rem;color:${c.gray500};`}>{meta.desc}</div>
+                  </div>
+                  <div style={`width:20px;height:20px;border-radius:50%;border:2px solid ${active ? c.blue : c.gray300};background:${active ? c.blue : "#fff"};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;`}>
+                    {active && <div style="width:8px;height:8px;border-radius:50%;background:#fff;" />}
+                  </div>
+                </div>
               </div>
-              <div style="font-size:0.8rem;color:#6b7280;">
-                {a === "book"
-                  ? "Vælg en ledig tid direkte i kalenderen"
-                  : a === "callback"
-                  ? "Vi ringer dig op for at aftale tid"
-                  : "Tilbuddet sendes til din email, så du kan gennemgå det"}
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           <button
-            style={s.btn + (!action ? "opacity:0.5;" : "")}
+            style={s.btn + (!action ? s.btnDisabled : "")}
             disabled={!action}
             onClick={() => action && goToContact(action)}
           >
@@ -490,29 +565,28 @@ export default function App({ companyId }: AppProps) {
         </>
       )}
 
-      {/* ── Step: Contact ── */}
+      {/* ── Step: Contact ─────────────────────────────────────────── */}
       {step === "contact" && (
         <>
-          <button style="background:none;border:none;color:#6b7280;font-size:0.83rem;cursor:pointer;padding:0;margin-bottom:12px;" onClick={() => setStep("action")}>
-            ← Tilbage
-          </button>
+          <BackBtn onClick={() => setStep("action")} />
           <h2 style={s.h2}>Dine oplysninger</h2>
+          <p style={s.subtitle}>Vi kontakter dig hurtigst muligt.</p>
 
           <div style={s.fieldset}>
-            <label style={s.label}>Navn *</label>
-            <input style={s.input} type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder="Dit fulde navn" />
+            <label style={s.label}>Fulde navn *</label>
+            <input style={s.input} type="text" value={name} placeholder="Dit fulde navn" onInput={(e) => setName((e.target as HTMLInputElement).value)} />
           </div>
 
           {(action === "email" || action === "book") && (
             <div style={s.fieldset}>
               <label style={s.label}>Email *</label>
-              <input style={s.input} type="email" value={email} onInput={(e) => setEmail((e.target as HTMLInputElement).value)} placeholder="din@email.dk" />
+              <input style={s.input} type="email" value={email} placeholder="din@email.dk" onInput={(e) => setEmail((e.target as HTMLInputElement).value)} />
             </div>
           )}
 
           <div style={s.fieldset}>
             <label style={s.label}>Telefon *</label>
-            <input style={s.input} type="tel" value={phone} onInput={(e) => setPhone((e.target as HTMLInputElement).value)} placeholder="+45 12 34 56 78" />
+            <input style={s.input} type="tel" value={phone} placeholder="+45 12 34 56 78" onInput={(e) => setPhone((e.target as HTMLInputElement).value)} />
           </div>
 
           {action === "book" && slots.length > 0 && (
@@ -521,12 +595,13 @@ export default function App({ companyId }: AppProps) {
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:200px;overflow-y:auto;">
                 {slots.map((slot) => {
                   const d = new Date(slot)
-                  const label = d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                  const label = d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short" }) + " · " + d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                  const sel = selectedSlot === slot
                   return (
                     <button
                       key={slot}
-                      style={`border:2px solid ${selectedSlot === slot ? "#3b82f6" : "#e5e7eb"};background:${selectedSlot === slot ? "#eff6ff" : "#fff"};border-radius:8px;padding:8px;font-size:0.8rem;cursor:pointer;text-align:center;`}
                       onClick={() => setSelectedSlot(slot)}
+                      style={`border:1.5px solid ${sel ? c.blue : c.gray200};background:${sel ? c.blueLight : "#fff"};border-radius:8px;padding:9px 8px;font-size:0.8rem;cursor:pointer;text-align:center;font-family:${font};color:${sel ? c.blue : c.gray700};font-weight:${sel ? "700" : "500"};`}
                     >
                       {label}
                     </button>
@@ -538,32 +613,51 @@ export default function App({ companyId }: AppProps) {
 
           {submitError && <p style={s.error}>{submitError}</p>}
 
-          <button
-            style={s.btn + ((!name || !phone || (action !== "callback" && !email) || (action === "book" && !selectedSlot) || submitting) ? "opacity:0.5;" : "")}
-            disabled={!name || !phone || (action !== "callback" && !email) || (action === "book" && !selectedSlot) || submitting}
-            onClick={handleSubmit}
-          >
-            {submitting ? "Sender..." : action === "book" ? "Book tid" : action === "callback" ? "Bliv ringet op" : "Send tilbud"}
-          </button>
+          {(() => {
+            const disabled = !name || !phone || (action !== "callback" && !email) || (action === "book" && !selectedSlot) || submitting
+            const label = submitting ? "Sender..." : action === "book" ? "Book tid" : action === "callback" ? "Bliv ringet op" : "Send tilbud"
+            return (
+              <button
+                style={s.btn + (disabled ? s.btnDisabled : "")}
+                disabled={disabled}
+                onClick={handleSubmit}
+              >
+                {label}
+              </button>
+            )
+          })()}
         </>
       )}
 
-      {/* ── Step: Confirmation ── */}
+      {/* ── Step: Confirmation ────────────────────────────────────── */}
       {step === "confirmation" && (
-        <div style="text-align:center;padding:16px 0;">
-          <div style="font-size:2.5rem;margin-bottom:12px;">✅</div>
-          <h2 style={s.h2}>
+        <div style="text-align:center;padding:32px 0 24px;">
+          <div style={`width:72px;height:72px;border-radius:50%;background:${c.greenLight};border:2px solid #bbf7d0;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;`}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h2 style={`font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;margin:0 0 10px;color:${c.gray900};`}>
             {action === "book" ? "Tak! Din tid er booket." : action === "callback" ? "Tak! Vi ringer dig op." : "Tak! Tilbuddet er sendt."}
           </h2>
-          <p style="font-size:0.88rem;color:#6b7280;">
+          <p style={`font-size:0.9rem;color:${c.gray500};max-width:340px;margin:0 auto;line-height:1.6;`}>
             {action === "book"
-              ? "Du vil modtage en bekræftelse på email."
+              ? "Du vil modtage en bekræftelse på email. Vi ser frem til at møde dig!"
               : action === "callback"
-              ? "Vi kontakter dig hurtigst muligt."
-              : "Tjek din indbakke for tilbuddet."}
+              ? "Vi kontakter dig hurtigst muligt på det oplyste telefonnummer."
+              : "Tjek din indbakke — tilbuddet er på vej til dig."}
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={`background:#fff;border:1px solid ${c.gray200};border-radius:8px;padding:8px 10px;`}>
+      <span style={`display:block;font-size:0.62rem;color:${c.gray400};font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;`}>{label}</span>
+      <span style={`display:block;font-size:0.88rem;color:${c.gray900};font-weight:700;`}>{value}</span>
     </div>
   )
 }
