@@ -391,7 +391,20 @@ export default function App({ companyId }: AppProps) {
           <h2 style={s.h2}>Din pris</h2>
           <p style={s.subtitle}>{addressText}</p>
 
-          <div style="display:flex;gap:18px;align-items:flex-start;">
+          <div style="display:flex;gap:20px;align-items:flex-start;">
+            {/* Sidebar: Boliginfo */}
+            <div style={`width:130px;flex-shrink:0;`}>
+              <p style={`font-size:0.62rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.06em;margin:0 0 8px;`}>Boliginfo</p>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <InfoLine label="Type" value={PROPERTY_LABELS[propertyType]} />
+                <InfoLine label="Areal" value={`${sqm} m²`} />
+                {bbrFloors != null && <InfoLine label="Plan" value={String(bbrFloors)} />}
+                {bbrRooms != null && <InfoLine label="Rum" value={String(bbrRooms)} />}
+                {bbrBathrooms != null && <InfoLine label="Bad" value={String(bbrBathrooms)} />}
+                {bbrToilets != null && <InfoLine label="Toilet" value={String(bbrToilets)} />}
+              </div>
+            </div>
+
             {/* Main column */}
             <div style="flex:1;min-width:0;">
               {/* Prisspecifikation */}
@@ -506,21 +519,8 @@ export default function App({ companyId }: AppProps) {
               </button>
             </div>
 
-            {/* Sidebar: Boliginfo */}
-            <div style={`width:160px;flex-shrink:0;background:${c.gray50};border:1px solid ${c.gray100};border-radius:12px;padding:12px;`}>
-              <p style={`font-size:0.62rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;`}>
-                Boliginfo
-              </p>
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                <InfoPill label="Type" value={PROPERTY_LABELS[propertyType]} />
-                <InfoPill label="Areal" value={`${sqm} m²`} />
-                {bbrFloors != null && <InfoPill label="Plan" value={String(bbrFloors)} />}
-                {bbrRooms != null && <InfoPill label="Rum" value={String(bbrRooms)} />}
-                {bbrBathrooms != null && <InfoPill label="Badeværelse" value={String(bbrBathrooms)} />}
-                {bbrToilets != null && <InfoPill label="Toilet" value={String(bbrToilets)} />}
-              </div>
-            </div>
           </div>
+
         </>
       )}
 
@@ -654,6 +654,15 @@ export default function App({ companyId }: AppProps) {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function InfoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;">
+      <span style={`font-size:0.72rem;color:${c.gray400};white-space:nowrap;`}>{label}</span>
+      <span style={`font-size:0.72rem;font-weight:600;color:${c.gray700};text-align:right;`}>{value}</span>
     </div>
   )
 }
