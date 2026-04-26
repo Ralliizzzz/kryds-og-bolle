@@ -104,7 +104,7 @@ export default function EmbedClient({ companyId }: { companyId: string; appUrl: 
         <h2 className="text-base font-semibold text-gray-900 mb-1">Forhåndsvisning</h2>
         <p className="text-sm text-gray-500 mb-5">Sådan ser beregneren ud for dine kunder.</p>
 
-        <div className="bg-gray-50 rounded-xl p-6 flex justify-center">
+        <div className="bg-gray-50 rounded-xl p-6">
           <div id="lead-widget" data-company={companyId} />
         </div>
       </div>

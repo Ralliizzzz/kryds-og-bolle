@@ -26,7 +26,7 @@ const c = {
 const font = "Inter,'Segoe UI',system-ui,sans-serif"
 
 const s = {
-  wrap: `font-family:${font};max-width:800px;width:100%;background:#fff;border:1px solid ${c.gray200};border-radius:22px;padding:40px;box-sizing:border-box;color:${c.gray900};box-shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.04);`,
+  wrap: `font-family:${font};max-width:780px;width:100%;background:#fff;border:1px solid ${c.gray200};border-radius:20px;padding:32px;box-sizing:border-box;color:${c.gray900};box-shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.04);margin:0 auto;`,
   label: `display:block;font-size:0.7rem;font-weight:700;color:${c.gray400};margin-bottom:8px;text-transform:uppercase;letter-spacing:0.07em;`,
   input: `width:100%;border:1.5px solid ${c.gray200};border-radius:12px;padding:13px 16px;font-size:0.93rem;box-sizing:border-box;outline:none;font-family:${font};color:${c.gray900};background:#fff;transition:border-color 0.15s;`,
   btn: `width:100%;background:${c.blue};color:#fff;border:none;border-radius:12px;padding:15px 24px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:18px;font-family:${font};letter-spacing:0.01em;`,
