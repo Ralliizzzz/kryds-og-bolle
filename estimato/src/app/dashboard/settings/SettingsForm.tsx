@@ -5,25 +5,14 @@ import type { OpeningHours, DayKey, Location } from "@/types/settings"
 import { saveSettings, saveServiceArea, saveContactInfo } from "./actions"
 
 const DAY_LABELS: Record<string, string> = {
-  mon: "Mandag",
-  tue: "Tirsdag",
-  wed: "Onsdag",
-  thu: "Torsdag",
-  fri: "Fredag",
-  sat: "Lørdag",
-  sun: "Søndag",
+  mon: "Mandag", tue: "Tirsdag", wed: "Onsdag", thu: "Torsdag",
+  fri: "Fredag", sat: "Lørdag", sun: "Søndag",
 }
 const DAYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 const EMPTY_BRANCH: Location = {
-  name: "",
-  street_address: "",
-  postal_code: "",
-  city: "",
-  country: "Danmark",
-  lat: null,
-  lon: null,
-  max_distance_km: 0,
+  name: "", street_address: "", postal_code: "", city: "",
+  country: "Danmark", lat: null, lon: null, max_distance_km: 0,
 }
 
 interface Props {
@@ -37,13 +26,8 @@ interface Props {
 }
 
 export default function SettingsForm({
-  initialOpeningHours,
-  initialMainLocation,
-  initialBranchLocations,
-  companyId,
-  initialCompanyName,
-  initialEmail,
-  initialPhone,
+  initialOpeningHours, initialMainLocation, initialBranchLocations,
+  companyId, initialCompanyName, initialEmail, initialPhone,
 }: Props) {
   const [openingHours, setOpeningHours] = useState<OpeningHours>(initialOpeningHours)
   const [mainLocation, setMainLocation] = useState<Location>(initialMainLocation)
@@ -57,7 +41,6 @@ export default function SettingsForm({
   const [pendingHours, startHours] = useTransition()
   const [pendingArea, startArea] = useTransition()
 
-  // Contact info
   const [companyName, setCompanyName] = useState(initialCompanyName)
   const [contactEmail, setContactEmail] = useState(initialEmail)
   const [contactPhone, setContactPhone] = useState(initialPhone)
@@ -74,7 +57,6 @@ export default function SettingsForm({
     })
   }
 
-  // ── Opening hours ────────────────────────────────────────────────────────
   function toggleDay(day: DayKey, open: boolean) {
     setOpeningHours((prev) => ({ ...prev, [day]: open ? { open: "08:00", close: "16:00" } : null }))
     setSavedHours(false)
@@ -94,7 +76,6 @@ export default function SettingsForm({
     })
   }
 
-  // ── Service area ─────────────────────────────────────────────────────────
   function addBranch() {
     setBranches((prev) => [...prev, { ...EMPTY_BRANCH }])
     setSavedArea(false)
@@ -117,67 +98,28 @@ export default function SettingsForm({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
 
-      {/* ── Kontaktoplysninger ── */}
-      <Section title="Kontaktoplysninger">
-        <p className="text-sm text-gray-500 mb-4">
-          Bruges til at sende dig email og SMS, når der kommer nye leads.
-        </p>
-        <div className="flex flex-col gap-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Firmanavn</label>
-            <input
-              type="text"
-              className={input}
-              value={companyName}
-              onChange={(e) => { setCompanyName(e.target.value); setSavedContact(false) }}
-              placeholder="Jensens Rengøring ApS"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email til notifikationer</label>
-            <input
-              type="email"
-              className={input}
-              value={contactEmail}
-              onChange={(e) => { setContactEmail(e.target.value); setSavedContact(false) }}
-              placeholder="din@email.dk"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefon til SMS-notifikationer</label>
-            <input
-              type="tel"
-              className={input}
-              value={contactPhone}
-              onChange={(e) => { setContactPhone(e.target.value); setSavedContact(false) }}
-              placeholder="+45 12 34 56 78"
-            />
+      {/* Kontaktoplysninger */}
+      <Card title="Kontaktoplysninger" description="Bruges til at sende dig email og SMS, når der kommer nye leads.">
+        <div className="flex flex-col gap-4">
+          <Field label="Firmanavn">
+            <input type="text" className={inp} value={companyName} onChange={(e) => { setCompanyName(e.target.value); setSavedContact(false) }} placeholder="Jensens Rengøring ApS" />
+          </Field>
+          <Field label="Email til notifikationer">
+            <input type="email" className={inp} value={contactEmail} onChange={(e) => { setContactEmail(e.target.value); setSavedContact(false) }} placeholder="din@email.dk" />
+          </Field>
+          <Field label="Telefon til SMS-notifikationer">
+            <input type="tel" className={inp} value={contactPhone} onChange={(e) => { setContactPhone(e.target.value); setSavedContact(false) }} placeholder="+45 12 34 56 78" />
             <p className="text-xs text-gray-400 mt-1">Bruges til SMS når nye leads kommer ind.</p>
-          </div>
+          </Field>
         </div>
-        <div className="flex items-center gap-4 pt-4 mt-4 border-t border-gray-100">
-          <button
-            onClick={handleSaveContact}
-            disabled={pendingContact}
-            className="bg-blue-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
-          >
-            {pendingContact ? "Gemmer..." : "Gem kontaktoplysninger"}
-          </button>
-          {savedContact && <span className="text-sm text-green-600 font-medium">✓ Gemt</span>}
-          {errorContact && <span className="text-sm text-red-500">{errorContact}</span>}
-        </div>
-      </Section>
+        <SaveRow onSave={handleSaveContact} isPending={pendingContact} saved={savedContact} error={errorContact} />
+      </Card>
 
-      {/* ── Serviceområde ── */}
-      <Section title="Serviceområde">
-        <p className="text-sm text-gray-500 mb-6">
-          Angiv din adresse og den maksimale afstand du kører. Kunder uden for serviceområdet
-          kan ikke bestille via widget&apos;en.
-        </p>
-
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Primær adresse</p>
+      {/* Serviceområde */}
+      <Card title="Serviceområde" description="Angiv din adresse og den maksimale afstand du kører. Kunder uden for serviceområdet kan ikke bestille via widget'en.">
+        <SectionLabel>Primær adresse</SectionLabel>
         <LocationFields
           loc={mainLocation}
           onUpdate={(updated) => { setMainLocation(updated); setSavedArea(false) }}
@@ -186,64 +128,43 @@ export default function SettingsForm({
 
         {branches.length > 0 && (
           <div className="mt-6">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Afdelinger</p>
+            <SectionLabel>Afdelinger</SectionLabel>
             {branches.map((b, idx) => (
-              <div key={idx} className="border border-gray-100 rounded-xl p-4 mb-3 relative">
+              <div key={idx} className="border border-gray-100 rounded-xl p-4 mb-3 relative bg-gray-50/50">
                 <button
                   onClick={() => removeBranch(idx)}
-                  className="absolute top-3 right-3 text-gray-300 hover:text-red-400 transition-colors text-lg leading-none"
-                  title="Fjern afdeling"
+                  className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 text-lg leading-none"
                 >
                   ×
                 </button>
-                <LocationFields
-                  loc={b}
-                  onUpdate={(updated) => updateBranch(idx, updated)}
-                  showName={true}
-                />
+                <LocationFields loc={b} onUpdate={(updated) => updateBranch(idx, updated)} showName={true} />
               </div>
             ))}
           </div>
         )}
 
-        <button
-          onClick={addBranch}
-          className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors py-1 mt-2"
-        >
+        <button onClick={addBranch} className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors py-1 mt-3">
           + Tilføj afdeling
         </button>
 
-        <div className="flex items-center gap-4 pt-4 mt-4 border-t border-gray-100">
-          <button
-            onClick={handleSaveArea}
-            disabled={pendingArea}
-            className="bg-blue-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
-          >
-            {pendingArea ? "Gemmer..." : "Gem serviceområde"}
-          </button>
-          {savedArea && <span className="text-sm text-green-600 font-medium">✓ Gemt</span>}
-          {errorArea && <span className="text-sm text-red-500">{errorArea}</span>}
-        </div>
-      </Section>
+        <SaveRow onSave={handleSaveArea} isPending={pendingArea} saved={savedArea} error={errorArea} />
+      </Card>
 
-      {/* ── Åbningstider ── */}
-      <Section title="Åbningstider">
-        <p className="text-sm text-gray-500 mb-4">
-          Kunder kan kun booke tider inden for dit åbningstidsinterval.
-        </p>
+      {/* Åbningstider */}
+      <Card title="Åbningstider" description="Kunder kan kun booke tider inden for dit åbningstidsinterval.">
         <div className="flex flex-col gap-2">
           {DAYS.map((day) => {
             const hours = openingHours[day]
             const isOpen = hours !== null
             return (
-              <div key={day} className="flex items-center gap-4">
-                <div className="w-24 flex items-center gap-2">
+              <div key={day} className="flex items-center gap-4 py-1">
+                <div className="w-28 flex items-center gap-2.5">
                   <input
                     type="checkbox"
                     id={`day-${day}`}
                     checked={isOpen}
                     onChange={(e) => toggleDay(day, e.target.checked)}
-                    className="w-4 h-4 accent-blue-500 cursor-pointer"
+                    className="w-4 h-4 accent-blue-600 cursor-pointer"
                   />
                   <label
                     htmlFor={`day-${day}`}
@@ -254,9 +175,9 @@ export default function SettingsForm({
                 </div>
                 {isOpen ? (
                   <div className="flex items-center gap-2 text-sm">
-                    <input type="time" className={`${input} w-28 text-sm`} value={hours!.open} onChange={(e) => updateHour(day, "open", e.target.value)} />
-                    <span className="text-gray-400">–</span>
-                    <input type="time" className={`${input} w-28 text-sm`} value={hours!.close} onChange={(e) => updateHour(day, "close", e.target.value)} />
+                    <input type="time" className={`${inp} w-28`} value={hours!.open} onChange={(e) => updateHour(day, "open", e.target.value)} />
+                    <span className="text-gray-400 text-xs">–</span>
+                    <input type="time" className={`${inp} w-28`} value={hours!.close} onChange={(e) => updateHour(day, "close", e.target.value)} />
                   </div>
                 ) : (
                   <span className="text-sm text-gray-400 italic">Lukket</span>
@@ -265,41 +186,13 @@ export default function SettingsForm({
             )
           })}
         </div>
-        <div className="flex items-center gap-4 pt-4 mt-4 border-t border-gray-100">
-          <button
-            onClick={handleSaveHours}
-            disabled={pendingHours}
-            className="bg-blue-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors disabled:opacity-60"
-          >
-            {pendingHours ? "Gemmer..." : "Gem åbningstider"}
-          </button>
-          {savedHours && <span className="text-sm text-green-600 font-medium">✓ Gemt</span>}
-          {errorHours && <span className="text-sm text-red-500">{errorHours}</span>}
-        </div>
-      </Section>
-
-      {/* ── Embed-kode ── */}
-      <Section title="Embed-kode">
-        <p className="text-sm text-gray-500 mb-3">
-          Indsæt denne kode på din hjemmeside for at vise prisberegner-widget&apos;en.
-        </p>
-        <EmbedCode companyId={companyId} />
-      </Section>
+        <SaveRow onSave={handleSaveHours} isPending={pendingHours} saved={savedHours} error={errorHours} />
+      </Card>
     </div>
   )
 }
 
-// ── LocationFields med DAWA-autocomplete ─────────────────────────────────────
-
-function LocationFields({
-  loc,
-  onUpdate,
-  showName,
-}: {
-  loc: Location
-  onUpdate: (updated: Location) => void
-  showName: boolean
-}) {
+function LocationFields({ loc, onUpdate, showName }: { loc: Location; onUpdate: (updated: Location) => void; showName: boolean }) {
   const [query, setQuery] = useState(loc.street_address || "")
   const [suggestions, setSuggestions] = useState<{ text: string; id: string }[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -309,7 +202,6 @@ function LocationFields({
 
   async function onInput(val: string) {
     setQuery(val)
-    // Nulstil geocoding når brugeren retter adressen
     onUpdate({ ...loc, street_address: val, lat: null, lon: null })
     if (debounceRef.current) clearTimeout(debounceRef.current)
     if (val.length < 3) { setSuggestions([]); setShowSuggestions(false); return }
@@ -347,56 +239,26 @@ function LocationFields({
   return (
     <div className="flex flex-col gap-3">
       {showName && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Navn på afdeling</label>
-          <input
-            type="text"
-            className={input}
-            value={loc.name}
-            onChange={(e) => onUpdate({ ...loc, name: e.target.value })}
-            placeholder="F.eks. København, Aarhus"
-          />
-        </div>
+        <Field label="Navn på afdeling">
+          <input type="text" className={inp} value={loc.name} onChange={(e) => onUpdate({ ...loc, name: e.target.value })} placeholder="F.eks. København, Aarhus" />
+        </Field>
       )}
 
-      <div
-        className="relative"
-        onBlur={(e) => {
-          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-            setTimeout(() => setShowSuggestions(false), 150)
-          }
-        }}
-      >
+      <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setTimeout(() => setShowSuggestions(false), 150) }}>
         <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
         <div className="relative">
-          <input
-            type="text"
-            className={input}
-            value={query}
-            onChange={(e) => onInput(e.target.value)}
-            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="Begynd at taste adresse..."
-            autoComplete="off"
-          />
+          <input type="text" className={inp} value={query} onChange={(e) => onInput(e.target.value)} onFocus={() => suggestions.length > 0 && setShowSuggestions(true)} placeholder="Begynd at taste adresse..." autoComplete="off" />
           {geocoded && !geocoding && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-green-600 font-medium pointer-events-none">
-              ✓ Fundet
-            </span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-600 font-semibold pointer-events-none">✓ Fundet</span>
           )}
           {geocoding && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
-              Henter...
-            </span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">Henter...</span>
           )}
         </div>
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 overflow-hidden">
+          <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 overflow-hidden">
             {suggestions.map((s) => (
-              <div
-                key={s.id}
-                className="px-3 py-2.5 text-sm cursor-pointer hover:bg-gray-50 border-b border-gray-50 last:border-0"
-                onMouseDown={() => onSelect(s)}
-              >
+              <div key={s.id} className="px-3 py-2.5 text-sm cursor-pointer hover:bg-gray-50 border-b border-gray-50 last:border-0" onMouseDown={() => onSelect(s)}>
                 {s.text}
               </div>
             ))}
@@ -407,62 +269,53 @@ function LocationFields({
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Maks. afstand (km)</label>
-        <input
-          type="number"
-          min="0"
-          className={input}
-          value={loc.max_distance_km ?? ""}
-          onChange={(e) => onUpdate({ ...loc, max_distance_km: Number(e.target.value) })}
-          placeholder="F.eks. 30"
-        />
-        <p className="text-xs text-gray-400 mt-1">
-          Sæt til 0 for ingen begrænsning.
-        </p>
-      </div>
+      <Field label="Maks. afstand (km)">
+        <input type="number" min="0" className={inp} value={loc.max_distance_km ?? ""} onChange={(e) => onUpdate({ ...loc, max_distance_km: Number(e.target.value) })} placeholder="F.eks. 30" />
+        <p className="text-xs text-gray-400 mt-1">Sæt til 0 for ingen begrænsning.</p>
+      </Field>
     </div>
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <div>
-      <h2 className="text-base font-semibold mb-4 pb-2 border-b border-gray-100">{title}</h2>
+    <div className="bg-white border border-gray-100 rounded-2xl p-6">
+      <h2 className="text-base font-semibold text-gray-900 mb-1">{title}</h2>
+      {description && <p className="text-sm text-gray-500 mb-5">{description}</p>}
+      {!description && <div className="mb-5" />}
       {children}
     </div>
   )
 }
 
-function EmbedCode({ companyId }: { companyId: string }) {
-  const [copied, setCopied] = useState(false)
-  const appUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_APP_URL ?? "https://estimato.dk"
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{children}</p>
+}
 
-  const code = `<script src="${appUrl}/widget.js" data-company="${companyId}"></script>\n<div id="lead-widget"></div>`
-
-  function copy() {
-    navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="relative">
-      <pre className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap break-all">
-        {code}
-      </pre>
-      <button
-        onClick={copy}
-        className="absolute top-3 right-3 text-xs px-2.5 py-1 rounded-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors font-medium"
-      >
-        {copied ? "Kopieret ✓" : "Kopiér"}
-      </button>
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      {children}
     </div>
   )
 }
 
-const input =
-  "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+function SaveRow({ onSave, isPending, saved, error }: { onSave: () => void; isPending: boolean; saved: boolean; error: string | null }) {
+  return (
+    <div className="flex items-center gap-3 pt-5 mt-5 border-t border-gray-100">
+      <button onClick={onSave} disabled={isPending} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60">
+        {isPending ? "Gemmer..." : "Gem"}
+      </button>
+      {saved && (
+        <span className="text-sm text-emerald-600 font-medium flex items-center gap-1.5">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          Gemt
+        </span>
+      )}
+      {error && <span className="text-sm text-red-500">{error}</span>}
+    </div>
+  )
+}
+
+const inp = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
