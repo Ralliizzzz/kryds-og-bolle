@@ -59,9 +59,9 @@ export async function GET(req: Request) {
           const enhed = Array.isArray(bbrData) ? bbrData[0] : null
           if (enhed) {
             sqm = enhed.enh027ArealTilBeboelse ?? enhed.enh026EnhedensSamledeAreal ?? null
-            rooms = enhed.enh021AntalVærelser ?? null
-            toilets = enhed.enh023AntalVandskylledeToiletter ?? null
-            bathrooms = enhed.enh024AntalBadeværelser ?? null
+            rooms = enhed.enh031AntalVærelser ?? null
+            toilets = enhed.enh065AntalVandskylledeToiletter ?? null
+            bathrooms = enhed.enh066AntalBadeværelser ?? null
 
             const anvend: string | undefined = enhed.enh020EnhedensAnvendelse
             if (anvend) {
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
             }
 
             // Hent antal etager fra bygning
-            const bygningId: string | undefined = enhed.enh016BygningElEjl
+            const bygningId: string | undefined = enhed.bygning
             if (bygningId) {
               try {
                 const bygRes = await fetch(
