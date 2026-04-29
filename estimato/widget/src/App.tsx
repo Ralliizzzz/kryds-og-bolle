@@ -257,29 +257,29 @@ function Calendar({ availableDates, selectedDate, onSelect }: {
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
   return (
-    <div style={`border:1.5px solid ${c.gray200};border-radius:14px;padding:16px;background:#fff;`}>
+    <div style={`border:1.5px solid ${c.gray200};border-radius:12px;padding:10px 12px;background:#fff;`}>
       {/* Måned-navigation */}
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <button
           onClick={prevMonth}
-          style={`background:none;border:1.5px solid ${c.gray200};border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${c.gray500};font-family:${font};font-size:1rem;line-height:1;`}
+          style={`background:none;border:1px solid ${c.gray200};border-radius:6px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${c.gray500};font-family:${font};font-size:0.95rem;line-height:1;`}
         >‹</button>
-        <span style={`font-weight:700;font-size:0.9rem;color:${c.gray900};`}>{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <span style={`font-weight:700;font-size:0.82rem;color:${c.gray900};`}>{MONTH_NAMES[viewMonth]} {viewYear}</span>
         <button
           onClick={nextMonth}
-          style={`background:none;border:1.5px solid ${c.gray200};border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${c.gray500};font-family:${font};font-size:1rem;line-height:1;`}
+          style={`background:none;border:1px solid ${c.gray200};border-radius:6px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${c.gray500};font-family:${font};font-size:0.95rem;line-height:1;`}
         >›</button>
       </div>
 
       {/* Ugedage */}
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;margin-bottom:2px;">
         {DAY_SHORT.map((d) => (
-          <div key={d} style={`text-align:center;font-size:0.65rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.05em;padding:3px 0;`}>{d}</div>
+          <div key={d} style={`text-align:center;font-size:0.6rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.04em;padding:2px 0;`}>{d}</div>
         ))}
       </div>
 
       {/* Dage */}
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;">
         {cells.map((day, i) => {
           if (day === null) return <div key={`e${i}`} />
           const dateStr = toDateStr(new Date(viewYear, viewMonth, day))
@@ -294,11 +294,11 @@ function Calendar({ availableDates, selectedDate, onSelect }: {
               disabled={isPast || !isAvail}
               onClick={() => { if (!isPast && isAvail) onSelect(dateStr) }}
               style={`
-                aspect-ratio:1/1;border:2px solid ${isSel ? c.blue : isToday && !isSel ? c.blue : "transparent"};
-                border-radius:8px;cursor:${isPast || !isAvail ? "default" : "pointer"};
+                aspect-ratio:1/1;border:1.5px solid ${isSel ? c.blue : isToday && !isSel ? c.blue : "transparent"};
+                border-radius:6px;cursor:${isPast || !isAvail ? "default" : "pointer"};
                 background:${isSel ? c.blue : isAvail && !isPast ? c.blueLight : "transparent"};
                 color:${isSel ? "#fff" : isPast || !isAvail ? c.gray300 : c.gray900};
-                font-size:0.82rem;font-weight:${isToday || isSel ? "700" : "400"};
+                font-size:0.75rem;font-weight:${isToday || isSel ? "700" : "400"};
                 font-family:${font};padding:0;transition:background 0.1s,border-color 0.1s;
               `}
             >
@@ -883,7 +883,7 @@ export default function App({ companyId }: AppProps) {
               <label style={s.label}>Bemærkninger <span style={`font-weight:400;color:${c.gray400};`}>(valgfrit)</span></label>
               <textarea
                 style={`${s.input}min-height:80px;resize:vertical;line-height:1.5;`}
-                placeholder="Fx adgangskode, særlige ønsker eller andet vi skal vide…"
+                placeholder="Eventuelle kommentarer…"
                 value={notes}
                 onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
               />
