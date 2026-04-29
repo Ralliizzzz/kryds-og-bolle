@@ -141,6 +141,37 @@ export async function sendBookingConfirmedToCustomer(
   })
 }
 
+// ─── Email til kunde (booking aflyst af virksomhed) ─────────────────────────
+
+export async function sendBookingCancelledToCustomer(
+  company: CompanyData,
+  lead: Pick<LeadData, "name" | "email" | "address" | "price">,
+  scheduledAt: string
+): Promise<void> {
+  if (!lead.email) return
+
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    console.warn("[notify] RESEND_API_KEY ikke sat — aflysningsmail ikke sendt")
+    return
+  }
+
+  const resend = new Resend(key)
+
+  const date = new Date(scheduledAt)
+  const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
+  const startTime = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const endTime = new Date(date.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const timeLabel = `${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${startTime}–${endTime}`
+
+  await resend.emails.send({
+    from: `${company.company_name} <noreply@estimato.dk>`,
+    to: lead.email,
+    subject: `Din booking er aflyst — ${company.company_name}`,
+    html: customerBookingCancelledEmail({ company, lead, timeLabel }),
+  })
+}
+
 // ─── SMS til virksomhed ──────────────────────────────────────────────────────
 
 export async function sendLeadSmsToCompany(
@@ -390,6 +421,69 @@ function customerBookingEmail({
         </td></tr>
 
         <!-- Footer -->
+        <tr><td style="padding:16px 32px;border-top:1px solid #f3f4f6;">
+          <p style="margin:0;color:#9ca3af;font-size:0.78rem;text-align:center;">
+            ${company.company_name} · Leveret via Estimato
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
+
+function customerBookingCancelledEmail({
+  company,
+  lead,
+  timeLabel,
+}: {
+  company: CompanyData
+  lead: Pick<LeadData, "name" | "email" | "address" | "price">
+  timeLabel: string
+}) {
+  return `<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:Inter,system-ui,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+
+        <tr><td style="background:#111;padding:24px 32px;">
+          <p style="margin:0;color:#fff;font-size:1.1rem;font-weight:700;">${company.company_name}</p>
+        </td></tr>
+
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 8px;font-size:1.2rem;font-weight:700;color:#111;">
+            Din booking er desværre aflyst
+          </h1>
+          <p style="margin:0 0 24px;color:#6b7280;font-size:0.9rem;">
+            Hej ${lead.name.split(" ")[0]}, vi beklager at vi ikke kan komme til den aftalte tid.
+          </p>
+
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+            <p style="margin:0 0 4px;color:#dc2626;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Aflyst tidspunkt</p>
+            <p style="margin:0;font-size:1rem;font-weight:600;color:#7f1d1d;">${timeLabel}</p>
+          </div>
+
+          <p style="margin:0 0 24px;color:#374151;font-size:0.88rem;line-height:1.6;">
+            Kontakt os endelig, hvis du ønsker at booke en ny tid eller har spørgsmål.
+          </p>
+
+          ${
+            company.phone
+              ? `<a href="tel:${company.phone}" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;padding:14px;border-radius:10px;font-weight:600;font-size:0.9rem;margin-bottom:12px;">Ring til os: ${company.phone}</a>`
+              : ""
+          }
+          ${
+            company.email
+              ? `<a href="mailto:${company.email}" style="display:block;text-align:center;background:#fff;color:#374151;text-decoration:none;padding:14px;border-radius:10px;font-weight:600;font-size:0.9rem;border:1px solid #e5e7eb;">Skriv til os</a>`
+              : ""
+          }
+        </td></tr>
+
         <tr><td style="padding:16px 32px;border-top:1px solid #f3f4f6;">
           <p style="margin:0;color:#9ca3af;font-size:0.78rem;text-align:center;">
             ${company.company_name} · Leveret via Estimato
