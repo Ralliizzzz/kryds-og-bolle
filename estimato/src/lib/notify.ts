@@ -110,6 +110,37 @@ export async function sendBookingEmailToCustomer(
   })
 }
 
+// ─── Email til kunde (booking bekræftet af virksomhed) ──────────────────────
+
+export async function sendBookingConfirmedToCustomer(
+  company: CompanyData,
+  lead: Pick<LeadData, "name" | "email" | "address" | "sqm" | "property_type" | "price">,
+  scheduledAt: string
+): Promise<void> {
+  if (!lead.email) return
+
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    console.warn("[notify] RESEND_API_KEY ikke sat — bekræftelsesmail ikke sendt")
+    return
+  }
+
+  const resend = new Resend(key)
+
+  const date = new Date(scheduledAt)
+  const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
+  const startTime = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const endTime = new Date(date.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const timeLabel = `${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${startTime}–${endTime}`
+
+  await resend.emails.send({
+    from: `${company.company_name} <noreply@estimato.dk>`,
+    to: lead.email,
+    subject: `Din booking er bekræftet — ${company.company_name}`,
+    html: customerBookingConfirmedEmail({ company, lead, timeLabel }),
+  })
+}
+
 // ─── SMS til virksomhed ──────────────────────────────────────────────────────
 
 export async function sendLeadSmsToCompany(
@@ -349,6 +380,77 @@ function customerBookingEmail({
           ${
             company.phone
               ? `<a href="tel:${company.phone}" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;padding:14px;border-radius:10px;font-weight:600;font-size:0.9rem;margin-bottom:12px;">Ring til os: ${company.phone}</a>`
+              : ""
+          }
+          ${
+            company.email
+              ? `<a href="mailto:${company.email}" style="display:block;text-align:center;background:#fff;color:#374151;text-decoration:none;padding:14px;border-radius:10px;font-weight:600;font-size:0.9rem;border:1px solid #e5e7eb;">Skriv til os</a>`
+              : ""
+          }
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:16px 32px;border-top:1px solid #f3f4f6;">
+          <p style="margin:0;color:#9ca3af;font-size:0.78rem;text-align:center;">
+            ${company.company_name} · Leveret via Estimato
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+}
+
+function customerBookingConfirmedEmail({
+  company,
+  lead,
+  timeLabel,
+}: {
+  company: CompanyData
+  lead: Pick<LeadData, "name" | "email" | "address" | "sqm" | "property_type" | "price">
+  timeLabel: string
+}) {
+  return `<!DOCTYPE html>
+<html lang="da">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:Inter,system-ui,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;">
+
+        <!-- Header -->
+        <tr><td style="background:#16a34a;padding:24px 32px;">
+          <p style="margin:0;color:#fff;font-size:1.1rem;font-weight:700;">${company.company_name}</p>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 8px;font-size:1.2rem;font-weight:700;color:#111;">
+            Din booking er bekræftet! ✓
+          </h1>
+          <p style="margin:0 0 24px;color:#6b7280;font-size:0.9rem;">
+            Vi glæder os til at se dig, ${lead.name.split(" ")[0]}.
+          </p>
+
+          <!-- Tidspunkt -->
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+            <p style="margin:0 0 4px;color:#16a34a;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Bekræftet tidspunkt</p>
+            <p style="margin:0;font-size:1rem;font-weight:600;color:#14532d;">${timeLabel}</p>
+          </div>
+
+          <!-- Detaljer -->
+          <table width="100%" style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+            ${row("Adresse", lead.address)}
+            ${lead.sqm ? row("Størrelse", `${lead.sqm} m²`) : ""}
+            ${lead.property_type ? row("Ejendomstype", PROPERTY_LABEL[lead.property_type] ?? lead.property_type) : ""}
+            ${row("Pris", `<strong>${lead.price.toLocaleString("da-DK")} kr</strong>`)}
+          </table>
+
+          ${
+            company.phone
+              ? `<a href="tel:${company.phone}" style="display:block;text-align:center;background:#111;color:#fff;text-decoration:none;padding:14px;border-radius:10px;font-weight:600;font-size:0.9rem;margin-bottom:12px;">Kontakt os: ${company.phone}</a>`
               : ""
           }
           ${
