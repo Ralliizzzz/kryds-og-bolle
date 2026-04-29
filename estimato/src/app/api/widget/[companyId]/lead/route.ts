@@ -18,6 +18,7 @@ interface LeadPayload {
   price_breakdown: Record<string, unknown>
   action_type: "book" | "callback" | "email"
   scheduled_at?: string
+  notes?: string
 }
 
 export async function POST(
@@ -47,6 +48,7 @@ export async function POST(
       price: body.price,
       price_breakdown: body.price_breakdown as unknown as import("@/types/database").Json,
       action_type: body.action_type,
+      notes: body.notes ?? null,
       status: "new",
     })
     .select("id")
@@ -89,6 +91,7 @@ export async function POST(
       price: body.price,
       price_breakdown: body.price_breakdown as unknown as import("@/types/database").Json,
       action_type: body.action_type,
+      notes: body.notes ?? null,
       status: "new",
       created_at: new Date().toISOString(),
     }

@@ -53,6 +53,7 @@ export interface LeadRow {
   price: number
   price_breakdown: Json
   action_type: LeadAction
+  notes: string | null
   status: LeadStatus
   created_at: string
 }

@@ -2,7 +2,7 @@ import { h, Fragment } from "preact"
 import type { ComponentChildren } from "preact"
 import { useState, useEffect, useRef } from "preact/hooks"
 import type { QuoteSettings, PropertyType, ActionType, Step, PriceBreakdown, FrequencyKey } from "./types"
-import { fetchSettings, fetchAddressSuggestions, fetchBBRData, fetchSlots, submitLead } from "./api"
+import { fetchSettings, fetchAddressSuggestions, fetchBBRData, fetchAvailableDates, fetchSlotsForDate, submitLead } from "./api"
 import { calculatePrice } from "./calc"
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
@@ -216,6 +216,101 @@ function BbrChip({ children }: { children: ComponentChildren }) {
   )
 }
 
+// ─── Calendar helpers ──────────────────────────────────────────────────────
+
+function toDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
+const MONTH_NAMES = ["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"]
+const DAY_SHORT = ["Ma","Ti","On","To","Fr","Lø","Sø"]
+
+function Calendar({ availableDates, selectedDate, onSelect }: {
+  availableDates: string[]
+  selectedDate: string | null
+  onSelect: (d: string) => void
+}) {
+  const today = new Date()
+  const todayStr = toDateStr(today)
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth())
+
+  const available = new Set(availableDates)
+
+  const firstDow = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11) }
+    else setViewMonth((m) => m - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0) }
+    else setViewMonth((m) => m + 1)
+  }
+
+  const cells: (number | null)[] = []
+  for (let i = 0; i < firstDow; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+
+  return (
+    <div style={`border:1.5px solid ${c.gray200};border-radius:14px;padding:16px;background:#fff;`}>
+      {/* Måned-navigation */}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <button
+          onClick={prevMonth}
+          style={`background:none;border:1.5px solid ${c.gray200};border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${c.gray500};font-family:${font};font-size:1rem;line-height:1;`}
+        >‹</button>
+        <span style={`font-weight:700;font-size:0.9rem;color:${c.gray900};`}>{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <button
+          onClick={nextMonth}
+          style={`background:none;border:1.5px solid ${c.gray200};border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:${c.gray500};font-family:${font};font-size:1rem;line-height:1;`}
+        >›</button>
+      </div>
+
+      {/* Ugedage */}
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+        {DAY_SHORT.map((d) => (
+          <div key={d} style={`text-align:center;font-size:0.65rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.05em;padding:3px 0;`}>{d}</div>
+        ))}
+      </div>
+
+      {/* Dage */}
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+        {cells.map((day, i) => {
+          if (day === null) return <div key={`e${i}`} />
+          const dateStr = toDateStr(new Date(viewYear, viewMonth, day))
+          const isPast = dateStr < todayStr
+          const isAvail = available.has(dateStr)
+          const isSel = selectedDate === dateStr
+          const isToday = dateStr === todayStr
+
+          return (
+            <button
+              key={dateStr}
+              disabled={isPast || !isAvail}
+              onClick={() => { if (!isPast && isAvail) onSelect(dateStr) }}
+              style={`
+                aspect-ratio:1/1;border:2px solid ${isSel ? c.blue : isToday && !isSel ? c.blue : "transparent"};
+                border-radius:8px;cursor:${isPast || !isAvail ? "default" : "pointer"};
+                background:${isSel ? c.blue : isAvail && !isPast ? c.blueLight : "transparent"};
+                color:${isSel ? "#fff" : isPast || !isAvail ? c.gray300 : c.gray900};
+                font-size:0.82rem;font-weight:${isToday || isSel ? "700" : "400"};
+                font-family:${font};padding:0;transition:background 0.1s,border-color 0.1s;
+              `}
+            >
+              {day}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── App ───────────────────────────────────────────────────────────────────
 
 interface AppProps {
@@ -255,13 +350,20 @@ export default function App({ companyId }: AppProps) {
 
   // Action
   const [action, setAction] = useState<ActionType | null>(null)
-  const [slots, setSlots] = useState<string[]>([])
+
+  // Booking — kalender og tider
+  const [availableDates, setAvailableDates] = useState<string[]>([])
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [slotsForDate, setSlotsForDate] = useState<string[]>([])
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [loadingDates, setLoadingDates] = useState(false)
+  const [loadingSlots, setLoadingSlots] = useState(false)
 
   // Contact
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
+  const [notes, setNotes] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -355,10 +457,26 @@ export default function App({ companyId }: AppProps) {
   async function goToContact(chosenAction: ActionType) {
     setAction(chosenAction)
     if (chosenAction === "book") {
-      const s = await fetchSlots(companyId)
-      setSlots(s)
+      setLoadingDates(true)
+      setAvailableDates([])
+      setSelectedDate(null)
+      setSlotsForDate([])
+      setSelectedSlot(null)
+      const dates = await fetchAvailableDates(companyId)
+      setAvailableDates(dates)
+      setLoadingDates(false)
     }
     setStep("contact")
+  }
+
+  async function onSelectDate(date: string) {
+    setSelectedDate(date)
+    setSelectedSlot(null)
+    setSlotsForDate([])
+    setLoadingSlots(true)
+    const slots = await fetchSlotsForDate(companyId, date)
+    setSlotsForDate(slots)
+    setLoadingSlots(false)
   }
 
   async function handleSubmit() {
@@ -378,6 +496,7 @@ export default function App({ companyId }: AppProps) {
         price_breakdown: breakdown,
         action_type: action,
         scheduled_at: selectedSlot ?? undefined,
+        notes: notes || undefined,
       })
       setStep("confirmation")
     } catch {
@@ -677,52 +796,104 @@ export default function App({ companyId }: AppProps) {
       {step === "contact" && (
         <>
           <BackBtn onClick={() => setStep("action")} />
-          <h2 style={s.h2}>Dine oplysninger</h2>
-          <p style={s.subtitle}>Vi kontakter dig hurtigst muligt.</p>
+          <h2 style={s.h2}>{action === "book" ? "Book tid" : "Dine oplysninger"}</h2>
+          <p style={s.subtitle}>{action === "book" ? "Vælg dato og tidspunkt, og udfyld dine kontaktoplysninger." : "Vi kontakter dig hurtigst muligt."}</p>
 
-          <div style="margin-bottom:20px;">
-            <label style={s.label}>Fulde navn *</label>
-            <input style={s.input} type="text" value={name} placeholder="Dit fulde navn" onInput={(e) => setName((e.target as HTMLInputElement).value)} />
-          </div>
-
-          {(action === "email" || action === "book") && (
-            <div style="margin-bottom:20px;">
-              <label style={s.label}>Email *</label>
-              <input style={s.input} type="email" value={email} placeholder="din@email.dk" onInput={(e) => setEmail((e.target as HTMLInputElement).value)} />
-            </div>
-          )}
-
-          <div style="margin-bottom:20px;">
-            <label style={s.label}>Telefon *</label>
-            <input style={s.input} type="tel" value={phone} placeholder="+45 12 34 56 78" onInput={(e) => setPhone((e.target as HTMLInputElement).value)} />
-          </div>
-
-          {action === "book" && slots.length > 0 && (
-            <div style="margin-bottom:20px;">
-              <label style={s.label}>Vælg tid *</label>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:200px;overflow-y:auto;">
-                {slots.map((slot) => {
-                  const d = new Date(slot)
-                  const label = d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "short" }) + " · " + d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-                  const sel = selectedSlot === slot
-                  return (
-                    <button
-                      key={slot}
-                      onClick={() => setSelectedSlot(slot)}
-                      style={`border:1.5px solid ${sel ? c.blue : c.gray200};background:${sel ? c.blueLight : "#fff"};border-radius:8px;padding:9px 8px;font-size:0.8rem;cursor:pointer;text-align:center;font-family:${font};color:${sel ? c.blue : c.gray700};font-weight:${sel ? "700" : "500"};`}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
+          {/* ── Kalender (kun ved booking) ── */}
+          {action === "book" && (
+            <>
+              <div style={s.section}>
+                <p style={s.sectionLabel}>Vælg dato</p>
+                {loadingDates ? (
+                  <div style={`color:${c.gray400};font-size:0.85rem;padding:12px 0;`}>Henter ledige datoer…</div>
+                ) : availableDates.length === 0 ? (
+                  <div style={`color:${c.gray500};font-size:0.85rem;padding:12px 16px;background:${c.gray50};border:1px solid ${c.gray200};border-radius:10px;`}>
+                    Ingen ledige tider de næste 30 dage. Kontakt os direkte.
+                  </div>
+                ) : (
+                  <Calendar
+                    availableDates={availableDates}
+                    selectedDate={selectedDate}
+                    onSelect={onSelectDate}
+                  />
+                )}
               </div>
-            </div>
+
+              {/* Tidsvindue-valg — vises når dato er valgt */}
+              {selectedDate && (
+                <div style={s.section}>
+                  <p style={s.sectionLabel}>
+                    Vælg tidspunkt —&nbsp;
+                    <span style={`font-weight:500;text-transform:none;color:${c.gray500};`}>
+                      {new Date(selectedDate + "T12:00:00").toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}
+                    </span>
+                  </p>
+                  {loadingSlots ? (
+                    <div style={`color:${c.gray400};font-size:0.85rem;padding:8px 0;`}>Henter tider…</div>
+                  ) : slotsForDate.length === 0 ? (
+                    <div style={`color:${c.gray500};font-size:0.85rem;padding:12px 16px;background:${c.gray50};border:1px solid ${c.gray200};border-radius:10px;`}>
+                      Ingen ledige tider denne dag.
+                    </div>
+                  ) : (
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                      {slotsForDate.map((slot) => {
+                        const d = new Date(slot)
+                        const startH = d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                        const endH = new Date(d.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                        const sel = selectedSlot === slot
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => setSelectedSlot(sel ? null : slot)}
+                            style={`border:2px solid ${sel ? c.blue : c.gray200};background:${sel ? c.blueLight : "#fff"};border-radius:10px;padding:10px 18px;font-size:0.87rem;cursor:pointer;font-family:${font};color:${sel ? c.blue : c.gray700};font-weight:${sel ? "700" : "500"};transition:all 0.15s;white-space:nowrap;`}
+                          >
+                            {startH} – {endH}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
+
+          {/* ── Kontaktoplysninger ── */}
+          <div style={s.section}>
+            <p style={s.sectionLabel}>Kontaktoplysninger</p>
+
+            <div style="margin-bottom:14px;">
+              <label style={s.label}>Fulde navn *</label>
+              <input style={s.input} type="text" value={name} placeholder="Dit fulde navn" onInput={(e) => setName((e.target as HTMLInputElement).value)} />
+            </div>
+
+            {(action === "email" || action === "book") && (
+              <div style="margin-bottom:14px;">
+                <label style={s.label}>Email *</label>
+                <input style={s.input} type="email" value={email} placeholder="din@email.dk" onInput={(e) => setEmail((e.target as HTMLInputElement).value)} />
+              </div>
+            )}
+
+            <div style="margin-bottom:14px;">
+              <label style={s.label}>Telefon *</label>
+              <input style={s.input} type="tel" value={phone} placeholder="+45 12 34 56 78" onInput={(e) => setPhone((e.target as HTMLInputElement).value)} />
+            </div>
+
+            <div style="margin-bottom:4px;">
+              <label style={s.label}>Bemærkninger <span style={`font-weight:400;color:${c.gray400};`}>(valgfrit)</span></label>
+              <textarea
+                style={`${s.input}min-height:80px;resize:vertical;line-height:1.5;`}
+                placeholder="Fx adgangskode, særlige ønsker eller andet vi skal vide…"
+                value={notes}
+                onInput={(e) => setNotes((e.target as HTMLTextAreaElement).value)}
+              />
+            </div>
+          </div>
 
           {submitError && <p style={s.error}>{submitError}</p>}
 
           {(() => {
-            const disabled = !name || !phone || (action !== "callback" && !email) || (action === "book" && !selectedSlot) || submitting
+            const disabled = !name || !phone || (action !== "callback" && !email) || (action === "book" && (!selectedDate || !selectedSlot)) || submitting
             const label = submitting ? "Sender..." : action === "book" ? "Book tid" : action === "callback" ? "Bliv ringet op" : "Send tilbud"
             return (
               <button style={s.btn + (disabled ? s.btnDisabled : "")} disabled={disabled} onClick={handleSubmit}>

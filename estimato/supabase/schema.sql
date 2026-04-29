@@ -90,6 +90,7 @@ CREATE TABLE public.leads (
   -- {base: 800, add_ons: [{name: "...", price: 200}], discount: {name: "...", value: -80}, total: 920}
   price_breakdown JSONB NOT NULL DEFAULT '{}',
   action_type     TEXT NOT NULL CHECK (action_type IN ('book', 'callback', 'email')),
+  notes           TEXT,
   status          TEXT NOT NULL DEFAULT 'new'
                   CHECK (status IN ('new', 'contacted', 'booked')),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()

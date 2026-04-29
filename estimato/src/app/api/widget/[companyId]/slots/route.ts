@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/server"
 
-// Genererer ledige tider for de næste 14 dage baseret på opening_hours
+// Genererer ledige tider for de næste 30 dage baseret på opening_hours
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ companyId: string }> }
@@ -9,6 +9,7 @@ export async function GET(
   const { companyId } = await params
   const { searchParams } = new URL(req.url)
   const dateStr = searchParams.get("date") // YYYY-MM-DD
+  const mode = searchParams.get("mode")    // "dates" = returnér kun tilgængelige datoer
 
   const supabase = await createServiceClient()
   const { data: settings } = await supabase
@@ -26,17 +27,19 @@ export async function GET(
     { open: string; close: string } | null
   >
 
+  const days = mode === "dates" ? 30 : 14
+
   // Hent eksisterende bookinger for at filtrere optagne tider
   const today = new Date()
-  const twoWeeks = new Date(today)
-  twoWeeks.setDate(twoWeeks.getDate() + 14)
+  const future = new Date(today)
+  future.setDate(future.getDate() + days)
 
   const { data: existingBookings } = await supabase
     .from("bookings")
     .select("scheduled_at")
     .eq("company_id", companyId)
     .gte("scheduled_at", today.toISOString())
-    .lte("scheduled_at", twoWeeks.toISOString())
+    .lte("scheduled_at", future.toISOString())
 
   const bookedTimes = new Set(
     (existingBookings ?? []).map((b) => b.scheduled_at)
@@ -45,7 +48,7 @@ export async function GET(
   const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
   const slots: string[] = []
 
-  for (let i = 1; i <= 14; i++) {
+  for (let i = 1; i <= days; i++) {
     const date = new Date(today)
     date.setDate(date.getDate() + i)
     const dayKey = dayNames[date.getDay()]
@@ -64,7 +67,15 @@ export async function GET(
     }
   }
 
-  // Filtrer på specifik dato hvis angivet
+  // ?mode=dates → returnér unikke datoer med mindst én ledig tid
+  if (mode === "dates") {
+    const dates = [...new Set(slots.map((s) => s.substring(0, 10)))]
+    return NextResponse.json(dates, {
+      headers: { "Access-Control-Allow-Origin": "*" },
+    })
+  }
+
+  // ?date=YYYY-MM-DD → returnér slots for den specifikke dato
   const filtered = dateStr
     ? slots.filter((s) => s.startsWith(dateStr))
     : slots.slice(0, 20)

@@ -29,8 +29,14 @@ export async function fetchBBRData(
   return res.json()
 }
 
-export async function fetchSlots(companyId: string): Promise<string[]> {
-  const res = await fetch(`${BASE}/api/widget/${companyId}/slots`)
+export async function fetchAvailableDates(companyId: string): Promise<string[]> {
+  const res = await fetch(`${BASE}/api/widget/${companyId}/slots?mode=dates`)
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function fetchSlotsForDate(companyId: string, date: string): Promise<string[]> {
+  const res = await fetch(`${BASE}/api/widget/${companyId}/slots?date=${date}`)
   if (!res.ok) return []
   return res.json()
 }
@@ -48,6 +54,7 @@ export async function submitLead(
     price_breakdown: PriceBreakdown
     action_type: "book" | "callback" | "email"
     scheduled_at?: string
+    notes?: string
   }
 ): Promise<{ success: boolean; lead_id: string }> {
   const res = await fetch(`${BASE}/api/widget/${companyId}/lead`, {
