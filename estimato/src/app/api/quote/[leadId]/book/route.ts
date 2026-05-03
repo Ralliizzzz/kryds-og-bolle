@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/server"
 import { sendBookingEmailToCustomer, sendLeadEmailToCompany, sendLeadSmsToCompany } from "@/lib/notify"
+import { getDurationMinutes } from "@/lib/duration"
+import type { DurationRange } from "@/lib/duration"
 
 export async function POST(
   req: Request,
@@ -25,15 +27,18 @@ export async function POST(
     return NextResponse.json({ error: "Lead ikke fundet" }, { status: 404 })
   }
 
-  const { data: company } = await supabase
-    .from("companies")
-    .select("company_name, email, phone")
-    .eq("id", lead.company_id)
-    .single()
+  const [companyResult, settingsResult] = await Promise.all([
+    supabase.from("companies").select("company_name, email, phone").eq("id", lead.company_id).single(),
+    supabase.from("quote_settings").select("duration_ranges").eq("company_id", lead.company_id).single(),
+  ])
 
+  const company = companyResult.data
   if (!company) {
     return NextResponse.json({ error: "Virksomhed ikke fundet" }, { status: 404 })
   }
+
+  const durationRanges = ((settingsResult.data?.duration_ranges ?? []) as DurationRange[])
+  const durationMinutes = getDurationMinutes(lead.sqm, durationRanges)
 
   const { error: bookingError } = await supabase
     .from("bookings")
@@ -57,7 +62,7 @@ export async function POST(
   const updatedLead = { ...lead, action_type: "book" }
 
   await Promise.allSettled([
-    sendBookingEmailToCustomer(company, updatedLead, scheduled_at),
+    sendBookingEmailToCustomer(company, updatedLead, scheduled_at, durationMinutes),
     sendLeadEmailToCompany(company, updatedLead),
     sendLeadSmsToCompany(company, updatedLead),
   ])

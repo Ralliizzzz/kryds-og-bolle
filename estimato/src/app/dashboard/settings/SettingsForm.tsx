@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useTransition, useRef } from "react"
-import type { OpeningHours, DayKey, Location } from "@/types/settings"
-import { saveSettings, saveServiceArea, saveContactInfo } from "./actions"
+import type { OpeningHours, DayKey, Location, DurationRange } from "@/types/settings"
+import { saveSettings, saveServiceArea, saveContactInfo, saveDurationRanges } from "./actions"
 
 const DAY_LABELS: Record<string, string> = {
   mon: "Mandag", tue: "Tirsdag", wed: "Onsdag", thu: "Torsdag",
@@ -19,6 +19,7 @@ interface Props {
   initialOpeningHours: OpeningHours
   initialMainLocation: Location
   initialBranchLocations: Location[]
+  initialDurationRanges: DurationRange[]
   companyId: string
   initialCompanyName: string
   initialEmail: string
@@ -26,20 +27,24 @@ interface Props {
 }
 
 export default function SettingsForm({
-  initialOpeningHours, initialMainLocation, initialBranchLocations,
+  initialOpeningHours, initialMainLocation, initialBranchLocations, initialDurationRanges,
   companyId, initialCompanyName, initialEmail, initialPhone,
 }: Props) {
   const [openingHours, setOpeningHours] = useState<OpeningHours>(initialOpeningHours)
   const [mainLocation, setMainLocation] = useState<Location>(initialMainLocation)
   const [branches, setBranches] = useState<Location[]>(initialBranchLocations)
+  const [durationRanges, setDurationRanges] = useState<DurationRange[]>(initialDurationRanges)
 
   const [savedHours, setSavedHours] = useState(false)
   const [savedArea, setSavedArea] = useState(false)
+  const [savedDuration, setSavedDuration] = useState(false)
   const [errorHours, setErrorHours] = useState<string | null>(null)
   const [errorArea, setErrorArea] = useState<string | null>(null)
+  const [errorDuration, setErrorDuration] = useState<string | null>(null)
 
   const [pendingHours, startHours] = useTransition()
   const [pendingArea, startArea] = useTransition()
+  const [pendingDuration, startDuration] = useTransition()
 
   const [companyName, setCompanyName] = useState(initialCompanyName)
   const [contactEmail, setContactEmail] = useState(initialEmail)
@@ -94,6 +99,29 @@ export default function SettingsForm({
       const result = await saveServiceArea(mainLocation, branches)
       if (result.error) setErrorArea(result.error)
       else setSavedArea(true)
+    })
+  }
+
+  function addDurationRange() {
+    const last = durationRanges[durationRanges.length - 1]
+    const newMin = last ? last.max + 1 : 0
+    setDurationRanges(prev => [...prev, { min: newMin, max: newMin + 99, duration_minutes: 60 }])
+    setSavedDuration(false)
+  }
+  function updateDurationRange(idx: number, field: keyof DurationRange, value: number) {
+    setDurationRanges(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
+    setSavedDuration(false)
+  }
+  function removeDurationRange(idx: number) {
+    setDurationRanges(prev => prev.filter((_, i) => i !== idx))
+    setSavedDuration(false)
+  }
+  function handleSaveDuration() {
+    setErrorDuration(null)
+    startDuration(async () => {
+      const result = await saveDurationRanges(durationRanges)
+      if (result.error) setErrorDuration(result.error)
+      else setSavedDuration(true)
     })
   }
 
@@ -187,6 +215,56 @@ export default function SettingsForm({
           })}
         </div>
         <SaveRow onSave={handleSaveHours} isPending={pendingHours} saved={savedHours} error={errorHours} />
+      </Card>
+
+      {/* Varighed */}
+      <Card title="Varighed per størrelse" description="Angiv hvor lang tid det tager at rengøre en bolig baseret på m². Bruges til at reservere den korrekte tid i kalenderen.">
+        {durationRanges.length === 0 ? (
+          <p className="text-sm text-gray-400 italic mb-4">Ingen intervaller — alle bookinger reserverer 2 timer (standard).</p>
+        ) : (
+          <div className="flex flex-col gap-2 mb-4">
+            {durationRanges.map((r, idx) => (
+              <div key={idx} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                <input
+                  type="number"
+                  min="0"
+                  className={`${inp} w-20`}
+                  value={r.min}
+                  onChange={(e) => updateDurationRange(idx, "min", Number(e.target.value))}
+                />
+                <span className="text-sm text-gray-400 shrink-0">–</span>
+                <input
+                  type="number"
+                  min="0"
+                  className={`${inp} w-20`}
+                  value={r.max}
+                  onChange={(e) => updateDurationRange(idx, "max", Number(e.target.value))}
+                />
+                <span className="text-sm text-gray-500 shrink-0">m²</span>
+                <span className="text-sm text-gray-400 shrink-0 mx-1">→</span>
+                <input
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  className={`${inp} w-20`}
+                  value={r.duration_minutes / 60}
+                  onChange={(e) => updateDurationRange(idx, "duration_minutes", Math.round(Number(e.target.value) * 60))}
+                />
+                <span className="text-sm text-gray-500 shrink-0">time(r)</span>
+                <button
+                  onClick={() => removeDurationRange(idx)}
+                  className="ml-auto w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 text-lg leading-none shrink-0"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={addDurationRange} className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors py-1">
+          + Tilføj interval
+        </button>
+        <SaveRow onSave={handleSaveDuration} isPending={pendingDuration} saved={savedDuration} error={errorDuration} />
       </Card>
     </div>
   )

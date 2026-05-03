@@ -94,7 +94,8 @@ export async function sendQuoteEmailToCustomer(
 export async function sendBookingEmailToCustomer(
   company: CompanyData,
   lead: LeadData,
-  scheduledAt: string
+  scheduledAt: string,
+  durationMinutes = 120
 ): Promise<void> {
   if (!lead.email) return
 
@@ -106,11 +107,10 @@ export async function sendBookingEmailToCustomer(
 
   const resend = new Resend(key)
 
-  // Formatér tidspunkt — naive ISO string tolkes som lokal tid
   const date = new Date(scheduledAt)
   const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
   const startTime = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-  const endTime = new Date(date.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const endTime = new Date(date.getTime() + durationMinutes * 60000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
   const timeLabel = `${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${startTime}–${endTime}`
 
   await resend.emails.send({
@@ -126,7 +126,8 @@ export async function sendBookingEmailToCustomer(
 export async function sendBookingConfirmedToCustomer(
   company: CompanyData,
   lead: Pick<LeadData, "name" | "email" | "address" | "sqm" | "property_type" | "price">,
-  scheduledAt: string
+  scheduledAt: string,
+  durationMinutes = 120
 ): Promise<void> {
   if (!lead.email) return
 
@@ -141,7 +142,7 @@ export async function sendBookingConfirmedToCustomer(
   const date = new Date(scheduledAt)
   const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
   const startTime = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-  const endTime = new Date(date.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const endTime = new Date(date.getTime() + durationMinutes * 60000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
   const timeLabel = `${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${startTime}–${endTime}`
 
   await resend.emails.send({
@@ -157,7 +158,8 @@ export async function sendBookingConfirmedToCustomer(
 export async function sendBookingCancelledToCustomer(
   company: CompanyData,
   lead: Pick<LeadData, "name" | "email" | "address" | "price">,
-  scheduledAt: string
+  scheduledAt: string,
+  durationMinutes = 120
 ): Promise<void> {
   if (!lead.email) return
 
@@ -172,7 +174,7 @@ export async function sendBookingCancelledToCustomer(
   const date = new Date(scheduledAt)
   const dayLabel = date.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })
   const startTime = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-  const endTime = new Date(date.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+  const endTime = new Date(date.getTime() + durationMinutes * 60000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
   const timeLabel = `${dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1)}, ${startTime}–${endTime}`
 
   await resend.emails.send({

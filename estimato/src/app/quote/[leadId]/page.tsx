@@ -14,13 +14,14 @@ export default async function QuotePage({ params }: { params: Promise<{ leadId: 
 
   if (error || !lead) notFound()
 
-  const { data: company } = await supabase
-    .from("companies")
-    .select("company_name, email, phone")
-    .eq("id", lead.company_id)
-    .single()
+  const [companyResult, settingsResult] = await Promise.all([
+    supabase.from("companies").select("company_name, email, phone").eq("id", lead.company_id).single(),
+    supabase.from("quote_settings").select("duration_ranges").eq("company_id", lead.company_id).single(),
+  ])
 
-  if (!company) notFound()
+  if (!companyResult.data) notFound()
+  const company = companyResult.data
+  const durationRanges = (settingsResult.data?.duration_ranges ?? []) as { min: number; max: number; duration_minutes: number }[]
 
   return (
     <main style={{ minHeight: "100vh", background: "#f9fafb", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", fontFamily: "Inter, 'Segoe UI', system-ui, sans-serif" }}>
@@ -36,6 +37,7 @@ export default async function QuotePage({ params }: { params: Promise<{ leadId: 
         propertyType={lead.property_type}
         price={lead.price}
         priceBreakdown={lead.price_breakdown as Record<string, unknown> | null}
+        durationRanges={durationRanges}
         alreadyBooked={lead.action_type === "book"}
       />
     </main>

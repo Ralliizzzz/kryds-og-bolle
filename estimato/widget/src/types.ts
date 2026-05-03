@@ -26,6 +26,12 @@ export interface FlatRange {
   price: number
 }
 
+export interface DurationRange {
+  min: number
+  max: number
+  duration_minutes: number
+}
+
 export type FrequencyKey = "weekly" | "every2weeks" | "every3weeks" | "every4weeks"
 
 export interface FrequencyDiscount {
@@ -58,6 +64,7 @@ export interface QuoteSettings {
   frequency_discounts: FrequencyDiscount[]
   locations?: WidgetLocation[]
   transport_fee: TransportFee
+  duration_ranges: DurationRange[]
 }
 
 export interface PriceBreakdown {

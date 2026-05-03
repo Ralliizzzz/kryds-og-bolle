@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import type { QuoteSettingsRow } from "@/types/database"
-import type { OpeningHours, Location } from "@/types/settings"
+import type { OpeningHours, Location, DurationRange } from "@/types/settings"
 import SettingsForm from "./SettingsForm"
 
 const EMPTY_LOCATION: Location = {
@@ -25,7 +25,7 @@ export default async function SettingsPage() {
   const [result, companyResult] = await Promise.all([
     supabase
       .from("quote_settings")
-      .select("opening_hours, main_location, branch_locations")
+      .select("opening_hours, main_location, branch_locations, duration_ranges")
       .eq("company_id", user.id)
       .single(),
     supabase
@@ -35,7 +35,7 @@ export default async function SettingsPage() {
       .single(),
   ])
 
-  const row = result.data as Pick<QuoteSettingsRow, "opening_hours" | "main_location" | "branch_locations"> | null
+  const row = result.data as Pick<QuoteSettingsRow, "opening_hours" | "main_location" | "branch_locations" | "duration_ranges"> | null
   const company = companyResult.data
 
   const openingHours = (row?.opening_hours ?? {
@@ -53,6 +53,7 @@ export default async function SettingsPage() {
     : EMPTY_LOCATION) as unknown as Location
 
   const branchLocations = (row?.branch_locations ?? []) as unknown as Location[]
+  const durationRanges = (row?.duration_ranges ?? []) as unknown as DurationRange[]
 
   return (
     <div className="max-w-2xl">
@@ -64,6 +65,7 @@ export default async function SettingsPage() {
         initialOpeningHours={openingHours}
         initialMainLocation={mainLocation}
         initialBranchLocations={branchLocations}
+        initialDurationRanges={durationRanges}
         companyId={user.id}
         initialCompanyName={company?.company_name ?? ""}
         initialEmail={company?.email ?? ""}

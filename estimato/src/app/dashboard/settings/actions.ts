@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import type { OpeningHours, Location } from "@/types/settings"
+import type { OpeningHours, Location, DurationRange } from "@/types/settings"
 
 export async function saveContactInfo(
   companyName: string,
@@ -58,6 +58,20 @@ export async function saveSettings(openingHours: OpeningHours): Promise<{ error?
     .eq("company_id", user.id)
 
   if (error) return { error: "Kunne ikke gemme indstillinger" }
+  return {}
+}
+
+export async function saveDurationRanges(ranges: DurationRange[]): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Ikke autoriseret" }
+
+  const { error } = await supabase
+    .from("quote_settings")
+    .update({ duration_ranges: ranges })
+    .eq("company_id", user.id)
+
+  if (error) return { error: "Kunne ikke gemme varighed" }
   return {}
 }
 

@@ -1,7 +1,7 @@
 import { h, Fragment } from "preact"
 import type { ComponentChildren } from "preact"
 import { useState, useEffect, useRef } from "preact/hooks"
-import type { QuoteSettings, PropertyType, ActionType, Step, PriceBreakdown, FrequencyKey } from "./types"
+import type { QuoteSettings, PropertyType, ActionType, Step, PriceBreakdown, FrequencyKey, DurationRange } from "./types"
 import { fetchSettings, fetchAddressSuggestions, fetchBBRData, fetchAvailableDates, fetchSlotsForDate, submitLead, bookLead } from "./api"
 import { calculatePrice } from "./calc"
 
@@ -40,6 +40,17 @@ const s = {
   subtitle: `font-size:0.87rem;color:${c.gray500};margin:0 0 20px;line-height:1.5;`,
   section: "margin-bottom:28px;",
   sectionLabel: `font-size:0.7rem;font-weight:700;color:${c.gray400};text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;`,
+}
+
+// ─── Duration helper ───────────────────────────────────────────────────────
+
+function getDurationMinutes(sqm: number | null, ranges: DurationRange[]): number {
+  if (!sqm || ranges.length === 0) return 120
+  const sorted = [...ranges].sort((a, b) => a.min - b.min)
+  for (const r of sorted) {
+    if (sqm >= r.min && sqm <= r.max) return r.duration_minutes
+  }
+  return sqm < sorted[0].min ? sorted[0].duration_minutes : sorted[sorted.length - 1].duration_minutes
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -466,7 +477,7 @@ export default function App({ companyId }: AppProps) {
       setSelectedDate(null)
       setSlotsForDate([])
       setSelectedSlot(null)
-      const dates = await fetchAvailableDates(companyId)
+      const dates = await fetchAvailableDates(companyId, Number(sqm) || undefined)
       setAvailableDates(dates)
       setLoadingDates(false)
     }
@@ -478,7 +489,7 @@ export default function App({ companyId }: AppProps) {
     setSelectedSlot(null)
     setSlotsForDate([])
     setLoadingSlots(true)
-    const slots = await fetchSlotsForDate(companyId, date)
+    const slots = await fetchSlotsForDate(companyId, date, Number(sqm) || undefined)
     setSlotsForDate(slots)
     setLoadingSlots(false)
   }
@@ -510,7 +521,7 @@ export default function App({ companyId }: AppProps) {
         setSelectedDate(null)
         setSlotsForDate([])
         setSelectedSlot(null)
-        const dates = await fetchAvailableDates(companyId)
+        const dates = await fetchAvailableDates(companyId, Number(sqm) || undefined)
         setAvailableDates(dates)
         setLoadingDates(false)
         setStep("quote-summary")
@@ -892,7 +903,7 @@ export default function App({ companyId }: AppProps) {
                         {slotsForDate.map((slot) => {
                           const d = new Date(slot)
                           const startH = d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-                          const endH = new Date(d.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                          const endH = new Date(d.getTime() + getDurationMinutes(Number(sqm) || null, settings?.duration_ranges ?? []) * 60000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
                           const sel = selectedSlot === slot
                           return (
                             <button
@@ -1023,7 +1034,7 @@ export default function App({ companyId }: AppProps) {
                             {slotsForDate.map((slot) => {
                               const d = new Date(slot)
                               const startH = d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-                              const endH = new Date(d.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                              const endH = new Date(d.getTime() + getDurationMinutes(Number(sqm) || null, settings?.duration_ranges ?? []) * 60000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
                               const sel = selectedSlot === slot
                               return (
                                 <button

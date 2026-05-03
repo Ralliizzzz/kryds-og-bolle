@@ -38,6 +38,8 @@ export interface QuoteSettingsRow {
   main_location: Json
   branch_locations: Json
   transport_fee: Json
+  // [{min: 0, max: 100, duration_minutes: 60}, {min: 101, max: 200, duration_minutes: 120}]
+  duration_ranges: Json
   updated_at: string
 }
 

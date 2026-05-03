@@ -6,6 +6,8 @@ import {
   sendQuoteEmailToCustomer,
   sendBookingEmailToCustomer,
 } from "@/lib/notify"
+import { getDurationMinutes } from "@/lib/duration"
+import type { DurationRange } from "@/lib/duration"
 import type { CompanyRow, LeadRow } from "@/types/database"
 
 interface LeadPayload {
@@ -71,13 +73,14 @@ export async function POST(
   }
 
   // Send notifikationer asynkront — blokerer ikke svaret til widget'en
-  const companyResult = await supabase
-    .from("companies")
-    .select("company_name, email, phone")
-    .eq("id", companyId)
-    .single()
+  const [companyResult, settingsResult] = await Promise.all([
+    supabase.from("companies").select("company_name, email, phone").eq("id", companyId).single(),
+    supabase.from("quote_settings").select("duration_ranges").eq("company_id", companyId).single(),
+  ])
 
   const company = companyResult.data as Pick<CompanyRow, "company_name" | "email" | "phone"> | null
+  const durationRanges = ((settingsResult.data?.duration_ranges ?? []) as DurationRange[])
+  const durationMinutes = getDurationMinutes(body.sqm ?? null, durationRanges)
 
   if (company) {
     const fullLead: LeadRow = {
@@ -106,7 +109,7 @@ export async function POST(
       body.action_type === "email"
         ? sendQuoteEmailToCustomer(company, { ...fullLead, price_breakdown: body.price_breakdown }, quoteUrl)
         : body.action_type === "book" && body.scheduled_at
-        ? sendBookingEmailToCustomer(company, fullLead, body.scheduled_at)
+        ? sendBookingEmailToCustomer(company, fullLead, body.scheduled_at, durationMinutes)
         : Promise.resolve(),
     ])
     results.forEach((r, i) => {

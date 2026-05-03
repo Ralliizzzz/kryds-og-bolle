@@ -29,14 +29,18 @@ export async function fetchBBRData(
   return res.json()
 }
 
-export async function fetchAvailableDates(companyId: string): Promise<string[]> {
-  const res = await fetch(`${BASE}/api/widget/${companyId}/slots?mode=dates`)
+export async function fetchAvailableDates(companyId: string, sqm?: number): Promise<string[]> {
+  const params = new URLSearchParams({ mode: "dates" })
+  if (sqm) params.set("sqm", String(sqm))
+  const res = await fetch(`${BASE}/api/widget/${companyId}/slots?${params}`)
   if (!res.ok) return []
   return res.json()
 }
 
-export async function fetchSlotsForDate(companyId: string, date: string): Promise<string[]> {
-  const res = await fetch(`${BASE}/api/widget/${companyId}/slots?date=${date}`)
+export async function fetchSlotsForDate(companyId: string, date: string, sqm?: number): Promise<string[]> {
+  const params = new URLSearchParams({ date })
+  if (sqm) params.set("sqm", String(sqm))
+  const res = await fetch(`${BASE}/api/widget/${companyId}/slots?${params}`)
   if (!res.ok) return []
   return res.json()
 }

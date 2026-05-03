@@ -40,6 +40,21 @@ interface PriceBreakdown {
   total: number
 }
 
+interface DurationRange {
+  min: number
+  max: number
+  duration_minutes: number
+}
+
+function getDurationMinutes(sqm: number | null, ranges: DurationRange[]): number {
+  if (!sqm || ranges.length === 0) return 120
+  const sorted = [...ranges].sort((a, b) => a.min - b.min)
+  for (const r of sorted) {
+    if (sqm >= r.min && sqm <= r.max) return r.duration_minutes
+  }
+  return sqm < sorted[0].min ? sorted[0].duration_minutes : sorted[sorted.length - 1].duration_minutes
+}
+
 interface Props {
   leadId: string
   companyId: string
@@ -52,6 +67,7 @@ interface Props {
   propertyType: string | null
   price: number
   priceBreakdown: Record<string, unknown> | null
+  durationRanges: DurationRange[]
   alreadyBooked: boolean
 }
 
@@ -123,7 +139,7 @@ function Calendar({ availableDates, selectedDate, onSelect }: {
 
 export default function QuoteBooking({
   leadId, companyId, companyName, companyEmail, companyPhone,
-  customerName, address, sqm, propertyType, price, priceBreakdown, alreadyBooked,
+  customerName, address, sqm, propertyType, price, priceBreakdown, durationRanges, alreadyBooked,
 }: Props) {
   const [availableDates, setAvailableDates] = useState<string[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -139,19 +155,21 @@ export default function QuoteBooking({
   const bd = priceBreakdown as PriceBreakdown | null
   const savings = Math.abs((bd?.discount?.value ?? 0) + (bd?.frequency_discount?.value ?? 0))
 
+  const sqmParam = sqm ? `&sqm=${sqm}` : ""
+
   useEffect(() => {
-    fetch(`/api/widget/${companyId}/slots?mode=dates`)
+    fetch(`/api/widget/${companyId}/slots?mode=dates${sqmParam}`)
       .then(r => r.ok ? r.json() : [])
       .then(setAvailableDates)
       .finally(() => setLoadingDates(false))
-  }, [companyId])
+  }, [companyId, sqmParam])
 
   async function onSelectDate(date: string) {
     setSelectedDate(date)
     setSelectedSlot(null)
     setSlotsForDate([])
     setLoadingSlots(true)
-    const res = await fetch(`/api/widget/${companyId}/slots?date=${date}`)
+    const res = await fetch(`/api/widget/${companyId}/slots?date=${date}${sqmParam}`)
     setSlotsForDate(res.ok ? await res.json() : [])
     setLoadingSlots(false)
   }
@@ -270,7 +288,7 @@ export default function QuoteBooking({
                     {slotsForDate.map(slot => {
                       const d = new Date(slot)
                       const startH = d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
-                      const endH = new Date(d.getTime() + 7200000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
+                      const endH = new Date(d.getTime() + getDurationMinutes(sqm, durationRanges) * 60000).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" })
                       const sel = selectedSlot === slot
                       return (
                         <button

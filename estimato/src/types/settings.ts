@@ -54,6 +54,12 @@ export interface FrequencyDiscount {
   enabled: boolean
 }
 
+export interface DurationRange {
+  min: number
+  max: number
+  duration_minutes: number
+}
+
 export interface QuoteSettingsData {
   pricing_type: "sqm" | "interval"
   price_per_sqm: number | null
