@@ -218,42 +218,49 @@ export default function SettingsForm({
       </Card>
 
       {/* Varighed */}
-      <Card title="Varighed per størrelse" description="Angiv hvor lang tid det tager at rengøre en bolig baseret på m². Bruges til at reservere den korrekte tid i kalenderen.">
+      <Card title="Hvor lang tid tager en rengøring?" description="Indstil hvor mange timer det tager at rengøre en bolig alt efter størrelse. Når en kunde booker en tid, reserveres det rigtige antal timer automatisk i din kalender.">
         {durationRanges.length === 0 ? (
-          <p className="text-sm text-gray-400 italic mb-4">Ingen intervaller — alle bookinger reserverer 2 timer (standard).</p>
+          <p className="text-sm text-gray-400 italic mb-4">Ingen intervaller oprettet — bookinger reserverer 2 timer som standard.</p>
         ) : (
           <div className="flex flex-col gap-2 mb-4">
+            <div className="grid grid-cols-[1fr_16px_1fr_auto_1fr_auto] items-center gap-2 px-4 pb-1">
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Fra m²</span>
+              <span />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Til m²</span>
+              <span />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Timer</span>
+              <span />
+            </div>
             {durationRanges.map((r, idx) => (
-              <div key={idx} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+              <div key={idx} className="grid grid-cols-[1fr_16px_1fr_auto_1fr_auto_auto] items-center gap-2 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
                 <input
                   type="number"
                   min="0"
-                  className={`${inp} w-20`}
+                  className={`${inp} w-full`}
                   value={r.min}
                   onChange={(e) => updateDurationRange(idx, "min", Number(e.target.value))}
                 />
-                <span className="text-sm text-gray-400 shrink-0">–</span>
+                <span className="text-sm text-gray-400 text-center">–</span>
                 <input
                   type="number"
                   min="0"
-                  className={`${inp} w-20`}
+                  className={`${inp} w-full`}
                   value={r.max}
                   onChange={(e) => updateDurationRange(idx, "max", Number(e.target.value))}
                 />
                 <span className="text-sm text-gray-500 shrink-0">m²</span>
-                <span className="text-sm text-gray-400 shrink-0 mx-1">→</span>
                 <input
                   type="number"
                   min="0.5"
                   step="0.5"
-                  className={`${inp} w-20`}
+                  className={`${inp} w-full`}
                   value={r.duration_minutes / 60}
                   onChange={(e) => updateDurationRange(idx, "duration_minutes", Math.round(Number(e.target.value) * 60))}
                 />
-                <span className="text-sm text-gray-500 shrink-0">time(r)</span>
+                <span className="text-sm text-gray-500 shrink-0">timer</span>
                 <button
                   onClick={() => removeDurationRange(idx)}
-                  className="ml-auto w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 text-lg leading-none shrink-0"
+                  className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors rounded-lg hover:bg-red-50 text-lg leading-none shrink-0"
                 >
                   ×
                 </button>
@@ -262,7 +269,7 @@ export default function SettingsForm({
           </div>
         )}
         <button onClick={addDurationRange} className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors py-1">
-          + Tilføj interval
+          + Tilføj størrelsesinterval
         </button>
         <SaveRow onSave={handleSaveDuration} isPending={pendingDuration} saved={savedDuration} error={errorDuration} />
       </Card>
