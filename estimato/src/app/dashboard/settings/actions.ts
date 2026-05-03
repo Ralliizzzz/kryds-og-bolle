@@ -71,7 +71,10 @@ export async function saveDurationRanges(ranges: DurationRange[]): Promise<{ err
     .update({ duration_ranges: ranges })
     .eq("company_id", user.id)
 
-  if (error) return { error: "Kunne ikke gemme varighed" }
+  if (error) {
+    console.error("[saveDurationRanges] DB error:", error)
+    return { error: `Kunne ikke gemme varighed: ${error.message}` }
+  }
   return {}
 }
 

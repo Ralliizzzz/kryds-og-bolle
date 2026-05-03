@@ -22,10 +22,10 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const [result, companyResult] = await Promise.all([
+  const [result, companyResult, durationResult] = await Promise.all([
     supabase
       .from("quote_settings")
-      .select("opening_hours, main_location, branch_locations, duration_ranges")
+      .select("opening_hours, main_location, branch_locations")
       .eq("company_id", user.id)
       .single(),
     supabase
@@ -33,9 +33,14 @@ export default async function SettingsPage() {
       .select("company_name, email, phone")
       .eq("id", user.id)
       .single(),
+    supabase
+      .from("quote_settings")
+      .select("duration_ranges")
+      .eq("company_id", user.id)
+      .single(),
   ])
 
-  const row = result.data as Pick<QuoteSettingsRow, "opening_hours" | "main_location" | "branch_locations" | "duration_ranges"> | null
+  const row = result.data as Pick<QuoteSettingsRow, "opening_hours" | "main_location" | "branch_locations"> | null
   const company = companyResult.data
 
   const openingHours = (row?.opening_hours ?? {
@@ -53,7 +58,8 @@ export default async function SettingsPage() {
     : EMPTY_LOCATION) as unknown as Location
 
   const branchLocations = (row?.branch_locations ?? []) as unknown as Location[]
-  const durationRanges = (row?.duration_ranges ?? []) as unknown as DurationRange[]
+  const durationRow = durationResult.data as Pick<QuoteSettingsRow, "duration_ranges"> | null
+  const durationRanges = (durationRow?.duration_ranges ?? []) as unknown as DurationRange[]
 
   return (
     <div className="max-w-2xl">
