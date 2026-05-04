@@ -14,6 +14,11 @@ export interface BookingWithLead {
     price: number
     phone: string | null
     email: string | null
+    sqm: number | null
+    property_type: string | null
+    price_breakdown: Record<string, unknown> | null
+    notes: string | null
+    logistics: { nearest_branch: string; distance_km: number; drive_minutes: number } | null
   }
 }
 
@@ -32,7 +37,7 @@ export default async function BookingsPage({ searchParams }: Props) {
 
   let query = supabase
     .from("bookings")
-    .select("id, scheduled_at, status, created_at, lead:leads(id, name, address, price, phone, email)")
+    .select("id, scheduled_at, status, created_at, lead:leads(id, name, address, price, phone, email, sqm, property_type, price_breakdown, notes, logistics)")
     .eq("company_id", user.id)
     .order("scheduled_at", { ascending: true })
 
