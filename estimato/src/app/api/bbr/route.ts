@@ -71,28 +71,30 @@ export async function GET(req: Request) {
               else propertyType = "commercial"
             }
 
-            // Hent antal etager fra bygning
-            const bygningId: string | undefined = enhed.bygning
-            if (bygningId) {
-              try {
-                const bygRes = await fetch(
-                  `${BBR_BASE}/bygning?id=${bygningId}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&format=JSON`,
-                  { next: { revalidate: 0 } }
-                )
-                if (bygRes.ok) {
-                  const bygData = await bygRes.json()
-                  const byg = Array.isArray(bygData) ? bygData[0] : null
-                  if (byg) {
-                    // etageList tæller alle plan inkl. udnyttede tagetager — mere præcist end byg054AntalEtager
-                    const etageList = byg.etageList
-                    if (Array.isArray(etageList) && etageList.length > 0) {
-                      floors = etageList.length
-                    } else {
-                      floors = byg.byg054AntalEtager ?? null
+            // Etager er kun relevant for huse — en lejlighed er altid 1 plan selv om bygningen har flere
+            if (propertyType === "house") {
+              const bygningId: string | undefined = enhed.bygning
+              if (bygningId) {
+                try {
+                  const bygRes = await fetch(
+                    `${BBR_BASE}/bygning?id=${bygningId}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&format=JSON`,
+                    { next: { revalidate: 0 } }
+                  )
+                  if (bygRes.ok) {
+                    const bygData = await bygRes.json()
+                    const byg = Array.isArray(bygData) ? bygData[0] : null
+                    if (byg) {
+                      // etageList tæller alle plan inkl. udnyttede tagetager — mere præcist end byg054AntalEtager
+                      const etageList = byg.etageList
+                      if (Array.isArray(etageList) && etageList.length > 0) {
+                        floors = etageList.length
+                      } else {
+                        floors = byg.byg054AntalEtager ?? null
+                      }
                     }
                   }
-                }
-              } catch { /* ignorér */ }
+                } catch { /* ignorér */ }
+              }
             }
           }
         }
