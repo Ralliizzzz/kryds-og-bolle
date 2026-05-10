@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { CompanyRow } from "@/types/database";
 import LogoutButton from "./LogoutButton";
+import FeedbackButton from "./FeedbackButton";
 import { SidebarNav } from "./SidebarNav";
 
 export default async function DashboardLayout({
@@ -109,6 +110,7 @@ export default async function DashboardLayout({
             </div>
           )}
 
+          <FeedbackButton />
           <LogoutButton />
         </div>
       </aside>

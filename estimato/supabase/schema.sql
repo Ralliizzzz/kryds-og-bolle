@@ -164,6 +164,23 @@ CREATE TRIGGER on_auth_user_created
 
 
 -- ============================================================
+-- 5b. FEEDBACK
+-- ============================================================
+CREATE TABLE public.feedback (
+  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
+  message    TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "feedback_insert_own" ON public.feedback
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = company_id);
+
+
+-- ============================================================
 -- 6. TRIGGER: updated_at på quote_settings
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.set_updated_at()

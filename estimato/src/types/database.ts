@@ -77,6 +77,13 @@ export interface BookingRow {
   created_at: string
 }
 
+export interface FeedbackRow {
+  id: string
+  company_id: string
+  message: string
+  created_at: string
+}
+
 type Rel = {
   foreignKeyName: string
   columns: string[]

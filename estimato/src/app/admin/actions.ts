@@ -1,0 +1,62 @@
+"use server"
+
+import { createClient, createServiceClient } from "@/lib/supabase/server"
+import { revalidatePath } from "next/cache"
+import type { SubscriptionStatus } from "@/types/database"
+
+async function assertAdmin() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.email !== process.env.ADMIN_EMAIL) {
+    throw new Error("Ikke autoriseret")
+  }
+}
+
+export async function extendTrial(companyId: string, days: number) {
+  await assertAdmin()
+  const supabase = await createServiceClient()
+  const { data: company } = await supabase
+    .from("companies")
+    .select("trial_end_date")
+    .eq("id", companyId)
+    .single()
+  const base = company?.trial_end_date
+    ? Math.max(new Date(company.trial_end_date).getTime(), Date.now())
+    : Date.now()
+  const newEnd = new Date(base + days * 24 * 60 * 60 * 1000).toISOString()
+  const { error } = await supabase
+    .from("companies")
+    .update({ trial_end_date: newEnd, subscription_status: "trial" })
+    .eq("id", companyId)
+  if (error) throw error
+  revalidatePath("/admin/companies")
+}
+
+export async function setStatus(companyId: string, status: SubscriptionStatus) {
+  await assertAdmin()
+  const supabase = await createServiceClient()
+  const { error } = await supabase
+    .from("companies")
+    .update({ subscription_status: status })
+    .eq("id", companyId)
+  if (error) throw error
+  revalidatePath("/admin/companies")
+}
+
+export async function deleteCompany(companyId: string) {
+  await assertAdmin()
+  const supabase = await createServiceClient()
+  const { error } = await supabase.auth.admin.deleteUser(companyId)
+  if (error) throw error
+  revalidatePath("/admin/companies")
+}
+
+export async function submitFeedback(message: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Ikke logget ind")
+  const { error } = await supabase
+    .from("feedback")
+    .insert({ company_id: user.id, message })
+  if (error) throw error
+}
