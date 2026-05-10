@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { extendTrial, setStatus, deleteCompany } from "../actions"
+import { extendTrial, setStatus, deleteCompany } from "../../actions"
 import type { SubscriptionStatus } from "@/types/database"
 
 const STATUS_OPTIONS: { value: SubscriptionStatus; label: string }[] = [

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation"
-import { isAdminAuthenticated } from "./login/actions"
-import AdminNav from "./AdminNav"
+import { isAdminAuthenticated } from "../login/actions"
+import AdminNav from "../AdminNav"
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminProtectedLayout({ children }: { children: React.ReactNode }) {
   const authenticated = await isAdminAuthenticated()
   if (!authenticated) redirect("/admin/login")
 

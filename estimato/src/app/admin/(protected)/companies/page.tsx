@@ -33,15 +33,11 @@ export default async function AdminCompaniesPage() {
   const total = rows.length
   const active = rows.filter((c) => c.subscription_status === "active").length
   const trial = rows.filter((c) => c.subscription_status === "trial").length
-  const cancelled = rows.filter(
-    (c) => c.subscription_status === "cancelled" || c.subscription_status === "expired"
-  ).length
 
   return (
     <div>
       <h1 className="text-xl font-bold text-gray-900 mb-6">Firmaer</h1>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         {[
           { label: "Firmaer i alt", value: total },
@@ -56,7 +52,6 @@ export default async function AdminCompaniesPage() {
         ))}
       </div>
 
-      {/* Table */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
