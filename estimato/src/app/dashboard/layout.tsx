@@ -30,6 +30,13 @@ export default async function DashboardLayout({
     company?.subscription_status === "trial" &&
     new Date(company.trial_end_date) < new Date();
 
+  const needsUpgrade =
+    isTrialExpired ||
+    company?.subscription_status === "cancelled" ||
+    company?.subscription_status === "expired";
+
+  if (needsUpgrade) redirect("/opgrader");
+
   const daysLeft =
     company?.subscription_status === "trial" && !isTrialExpired
       ? Math.ceil(

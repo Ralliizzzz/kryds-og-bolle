@@ -18,6 +18,32 @@ export async function GET(
     return NextResponse.json({ error: "Virksomhed ikke fundet" }, { status: 404 })
   }
 
+  // Tjek abonnement — blokér widget hvis trial udløbet eller konto annulleret
+  const { data: company } = await supabase
+    .from("companies")
+    .select("subscription_status, trial_end_date")
+    .eq("id", companyId)
+    .single()
+
+  if (company) {
+    const trialExpired =
+      company.subscription_status === "trial" &&
+      new Date(company.trial_end_date) < new Date()
+    const blocked =
+      trialExpired ||
+      company.subscription_status === "cancelled" ||
+      company.subscription_status === "expired"
+    if (blocked) {
+      return NextResponse.json(
+        { blocked: true },
+        {
+          status: 402,
+          headers: { "Access-Control-Allow-Origin": "*" },
+        }
+      )
+    }
+  }
+
   // Build active locations (must have coordinates; max_distance_km=0 means no limit)
   type RawLoc = { lat?: number | null; lon?: number | null; max_distance_km?: number; name?: string }
   const mainLoc = data.main_location as RawLoc | null
