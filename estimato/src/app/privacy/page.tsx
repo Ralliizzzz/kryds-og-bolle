@@ -22,7 +22,7 @@ export default function PrivacyPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privatlivspolitik</h1>
-        <p className="text-gray-500 text-sm mb-12">Senest opdateret: maj 2025</p>
+        <p className="text-gray-500 text-sm mb-12">Senest opdateret: maj 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-10 text-gray-700 leading-relaxed">
 
