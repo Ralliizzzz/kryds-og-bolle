@@ -195,7 +195,7 @@ export default function HomePage() {
               Lavet til danske rengøringsfirmaer
             </div>
 
-            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-[1.1] mb-6 text-gray-900">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6 text-gray-900">
               Spar timer om ugen på<br />
               <span className="text-blue-600">manuelle tilbud og booking</span>
             </h1>

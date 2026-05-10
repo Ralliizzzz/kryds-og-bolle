@@ -52,7 +52,7 @@ export default function BookingsTable({ upcoming, past, counts, activeStatus }: 
 
   return (
     <>
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -234,7 +234,7 @@ function BookingCard({
       {/* Udvidet detaljevisning */}
       {expanded && (
         <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/40">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-4">
             {b.lead.sqm && <Detail label="Størrelse">{b.lead.sqm} m²</Detail>}
             {b.lead.property_type && (
               <Detail label="Ejendomstype">{PROPERTY_LABEL[b.lead.property_type] ?? b.lead.property_type}</Detail>

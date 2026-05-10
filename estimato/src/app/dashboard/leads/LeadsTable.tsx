@@ -79,7 +79,7 @@ export default function LeadsTable({ leads, counts, activeStatus, companyId }: P
   return (
     <>
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -165,7 +165,7 @@ export default function LeadsTable({ leads, counts, activeStatus, companyId }: P
                   <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/40">
 
                     {/* Kontaktinfo + boliginfo */}
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm mb-4">
                       {lead.email && (
                         <Detail label="Email">
                           <a href={`mailto:${lead.email}`} className="text-blue-600 hover:underline">{lead.email}</a>

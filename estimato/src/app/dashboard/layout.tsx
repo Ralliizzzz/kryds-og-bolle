@@ -5,6 +5,7 @@ import type { CompanyRow } from "@/types/database";
 import LogoutButton from "./LogoutButton";
 import FeedbackButton from "./FeedbackButton";
 import { SidebarNav } from "./SidebarNav";
+import MobileTopBar from "./MobileTopBar";
 
 export default async function DashboardLayout({
   children,
@@ -48,8 +49,8 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-60 bg-white border-r border-gray-100 flex flex-col px-3 py-5 flex-shrink-0">
+      {/* Sidebar — skjult på mobil */}
+      <aside className="hidden md:flex w-60 bg-white border-r border-gray-100 flex-col px-3 py-5 flex-shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2 px-3 mb-6">
           <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center flex-shrink-0">
@@ -116,8 +117,9 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-5xl mx-auto px-8 py-8">{children}</div>
+      <main className="flex-1 overflow-auto min-w-0">
+        <MobileTopBar companyName={company?.company_name} />
+        <div className="max-w-5xl mx-auto px-4 py-6 md:px-8 md:py-8">{children}</div>
       </main>
     </div>
   );
