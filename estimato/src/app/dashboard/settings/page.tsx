@@ -22,7 +22,7 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const [result, companyResult, durationResult] = await Promise.all([
+  const [result, companyResult, durationResult, leadTimeResult] = await Promise.all([
     supabase
       .from("quote_settings")
       .select("opening_hours, main_location, branch_locations")
@@ -36,6 +36,11 @@ export default async function SettingsPage() {
     supabase
       .from("quote_settings")
       .select("duration_ranges")
+      .eq("company_id", user.id)
+      .single(),
+    supabase
+      .from("quote_settings")
+      .select("minimum_booking_days_in_advance")
       .eq("company_id", user.id)
       .single(),
   ])
@@ -60,6 +65,8 @@ export default async function SettingsPage() {
   const branchLocations = (row?.branch_locations ?? []) as unknown as Location[]
   const durationRow = durationResult.data as Pick<QuoteSettingsRow, "duration_ranges"> | null
   const durationRanges = (durationRow?.duration_ranges ?? []) as unknown as DurationRange[]
+  const leadTimeRow = leadTimeResult.data as Pick<QuoteSettingsRow, "minimum_booking_days_in_advance"> | null
+  const minimumBookingDays = leadTimeRow?.minimum_booking_days_in_advance ?? 1
 
   return (
     <div className="max-w-2xl">
@@ -72,6 +79,7 @@ export default async function SettingsPage() {
         initialMainLocation={mainLocation}
         initialBranchLocations={branchLocations}
         initialDurationRanges={durationRanges}
+        initialMinimumBookingDays={minimumBookingDays}
         companyId={user.id}
         initialCompanyName={company?.company_name ?? ""}
         initialEmail={company?.email ?? ""}

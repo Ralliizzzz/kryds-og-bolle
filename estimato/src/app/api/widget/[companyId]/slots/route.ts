@@ -26,7 +26,7 @@ export async function GET(
   const supabase = await createServiceClient()
   const { data: settings } = await supabase
     .from("quote_settings")
-    .select("opening_hours, duration_ranges")
+    .select("opening_hours, duration_ranges, minimum_booking_days_in_advance")
     .eq("company_id", companyId)
     .single()
 
@@ -37,6 +37,7 @@ export async function GET(
   const openingHours = settings.opening_hours as Record<string, { open: string; close: string } | null>
   const durationRanges = (settings.duration_ranges ?? []) as DurationRange[]
   const durationMinutes = getDurationMinutes(sqm, durationRanges)
+  const minDays = (settings.minimum_booking_days_in_advance as number | null) ?? 1
 
   const days = mode === "dates" ? 30 : 14
   const today = new Date()
@@ -66,7 +67,7 @@ export async function GET(
   const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
   const slots: string[] = []
 
-  for (let i = 1; i <= days; i++) {
+  for (let i = minDays; i <= days; i++) {
     const date = new Date(today)
     date.setDate(date.getDate() + i)
     const dayKey = dayNames[date.getDay()]

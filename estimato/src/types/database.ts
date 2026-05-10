@@ -41,6 +41,7 @@ export interface QuoteSettingsRow {
   transport_fee: Json
   // [{min: 0, max: 100, duration_minutes: 60}, {min: 101, max: 200, duration_minutes: 120}]
   duration_ranges: Json
+  minimum_booking_days_in_advance: number
   updated_at: string
 }
 

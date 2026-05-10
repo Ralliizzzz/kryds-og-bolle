@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from "react"
 import type { OpeningHours, DayKey, Location, DurationRange } from "@/types/settings"
-import { saveSettings, saveServiceArea, saveContactInfo, saveDurationRanges } from "./actions"
+import { saveSettings, saveServiceArea, saveContactInfo, saveDurationRanges, saveBookingLeadTime } from "./actions"
 
 const DAY_LABELS: Record<string, string> = {
   mon: "Mandag", tue: "Tirsdag", wed: "Onsdag", thu: "Torsdag",
@@ -20,6 +20,7 @@ interface Props {
   initialMainLocation: Location
   initialBranchLocations: Location[]
   initialDurationRanges: DurationRange[]
+  initialMinimumBookingDays: number
   companyId: string
   initialCompanyName: string
   initialEmail: string
@@ -28,6 +29,7 @@ interface Props {
 
 export default function SettingsForm({
   initialOpeningHours, initialMainLocation, initialBranchLocations, initialDurationRanges,
+  initialMinimumBookingDays,
   companyId, initialCompanyName, initialEmail, initialPhone,
 }: Props) {
   const [openingHours, setOpeningHours] = useState<OpeningHours>(initialOpeningHours)
@@ -53,12 +55,26 @@ export default function SettingsForm({
   const [errorContact, setErrorContact] = useState<string | null>(null)
   const [pendingContact, startContact] = useTransition()
 
+  const [minimumBookingDays, setMinimumBookingDays] = useState(initialMinimumBookingDays)
+  const [savedLeadTime, setSavedLeadTime] = useState(false)
+  const [errorLeadTime, setErrorLeadTime] = useState<string | null>(null)
+  const [pendingLeadTime, startLeadTime] = useTransition()
+
   function handleSaveContact() {
     setErrorContact(null)
     startContact(async () => {
       const result = await saveContactInfo(companyName, contactEmail, contactPhone)
       if (result.error) setErrorContact(result.error)
       else setSavedContact(true)
+    })
+  }
+
+  function handleSaveLeadTime() {
+    setErrorLeadTime(null)
+    startLeadTime(async () => {
+      const result = await saveBookingLeadTime(minimumBookingDays)
+      if (result.error) setErrorLeadTime(result.error)
+      else setSavedLeadTime(true)
     })
   }
 
@@ -272,6 +288,23 @@ export default function SettingsForm({
           + Tilføj størrelsesinterval
         </button>
         <SaveRow onSave={handleSaveDuration} isPending={pendingDuration} saved={savedDuration} error={errorDuration} />
+      </Card>
+
+      {/* Bookingvarsel */}
+      <Card title="Bookingvarsel" description="Minimum antal dage kunden skal booke i forvejen. Tider tættere på end dette vises ikke i widget'en.">
+        <div className="flex items-center gap-3">
+          <input
+            type="number"
+            min={0}
+            max={90}
+            value={minimumBookingDays}
+            onChange={(e) => { setMinimumBookingDays(Math.max(0, Number(e.target.value))); setSavedLeadTime(false) }}
+            className={`${inp} w-24`}
+          />
+          <span className="text-sm text-gray-500">dage</span>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Standard er 1 dag (kunden kan tidligst booke i morgen). Sæt til 0 for at tillade booking samme dag.</p>
+        <SaveRow onSave={handleSaveLeadTime} isPending={pendingLeadTime} saved={savedLeadTime} error={errorLeadTime} />
       </Card>
     </div>
   )
