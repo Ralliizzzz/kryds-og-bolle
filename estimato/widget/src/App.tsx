@@ -27,19 +27,10 @@ const c = {
 
 const font = "Inter,'Segoe UI',system-ui,sans-serif"
 
-const MOBILE_CSS = `
-@media (max-width:520px) {
-  .estimato-wrap { padding: 20px 16px !important; border-radius: 16px !important; }
-  .estimato-book-cols { flex-direction: column !important; }
-  .estimato-calendar { width: 100% !important; }
-  .estimato-calendar-inner { width: 100% !important; }
-}
-`
-
 const s = {
-  wrap: `font-family:${font};max-width:780px;width:100%;background:#fff;border:1px solid ${c.gray200};border-radius:20px;padding:clamp(16px,4vw,32px);box-sizing:border-box;color:${c.gray900};box-shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.04);margin:0 auto;`,
+  wrap: `font-family:${font};max-width:780px;width:100%;background:#fff;border:1px solid ${c.gray200};border-radius:20px;padding:32px;box-sizing:border-box;color:${c.gray900};box-shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.04);margin:0 auto;`,
   label: `display:block;font-size:0.7rem;font-weight:700;color:${c.gray400};margin-bottom:8px;text-transform:uppercase;letter-spacing:0.07em;`,
-  input: `width:100%;border:1.5px solid ${c.gray200};border-radius:12px;padding:13px 16px;font-size:0.93rem;box-sizing:border-box;outline:none;font-family:${font};color:${c.gray900};background:#fff;transition:border-color 0.15s;`,
+  input: `width:100%;border:1.5px solid ${c.gray200};border-radius:12px;padding:13px 16px;font-size:16px;box-sizing:border-box;outline:none;font-family:${font};color:${c.gray900};background:#fff;transition:border-color 0.15s;`,
   btn: `width:100%;background:${c.blue};color:#fff;border:none;border-radius:12px;padding:15px 24px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:18px;font-family:${font};letter-spacing:0.01em;`,
   btnDisabled: "opacity:0.4;cursor:not-allowed;",
   btnBack: `background:none;border:none;color:${c.gray400};font-size:0.82rem;cursor:pointer;padding:0;margin-bottom:24px;font-family:${font};display:flex;align-items:center;gap:5px;`,
@@ -248,10 +239,11 @@ function toDateStr(d: Date): string {
 const MONTH_NAMES = ["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"]
 const DAY_SHORT = ["Ma","Ti","On","To","Fr","Lø","Sø"]
 
-function Calendar({ availableDates, selectedDate, onSelect }: {
+function Calendar({ availableDates, selectedDate, onSelect, fullWidth = false }: {
   availableDates: string[]
   selectedDate: string | null
   onSelect: (d: string) => void
+  fullWidth?: boolean
 }) {
   const today = new Date()
   const todayStr = toDateStr(today)
@@ -277,7 +269,7 @@ function Calendar({ availableDates, selectedDate, onSelect }: {
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
   return (
-    <div style={`border:1.5px solid ${c.gray200};border-radius:12px;padding:8px;background:#fff;width:256px;box-sizing:border-box;`} class="estimato-calendar-inner">
+    <div style={`border:1.5px solid ${c.gray200};border-radius:12px;padding:8px;background:#fff;width:${fullWidth ? "100%" : "256px"};box-sizing:border-box;`}>
       {/* Måned-navigation */}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
         <button
@@ -392,13 +384,14 @@ export default function App({ companyId }: AppProps) {
   const [leadId, setLeadId] = useState<string | null>(null)
   const [bookingConfirmed, setBookingConfirmed] = useState(false)
 
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth <= 520
+  )
+
   useEffect(() => {
-    if (!document.getElementById("estimato-mobile-css")) {
-      const style = document.createElement("style")
-      style.id = "estimato-mobile-css"
-      style.textContent = MOBILE_CSS
-      document.head.appendChild(style)
-    }
+    const check = () => setIsMobile(window.innerWidth <= 520)
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
   }, [])
 
   useEffect(() => {
@@ -592,7 +585,7 @@ export default function App({ companyId }: AppProps) {
   const canProceedAddress = !!(addressText && sqm && Number(sqm) > 0 && !outOfRange)
 
   return (
-    <div style={s.wrap} class="estimato-wrap">
+    <div style={s.wrap + (isMobile ? "padding:20px 16px;" : "")}>
       <Progress step={step} />
 
       {/* ── Step: Address ─────────────────────────────────────────── */}
@@ -768,7 +761,7 @@ export default function App({ companyId }: AppProps) {
           {settings.frequency_discounts.length > 0 && (
             <div style={s.section}>
               <p style={s.sectionLabel}>Hvor ofte skal vi gøre rent?</p>
-              <div style={`display:grid;grid-template-columns:repeat(${Math.min(settings.frequency_discounts.length, 4)},1fr);gap:10px;`}>
+              <div style={`display:grid;grid-template-columns:repeat(${isMobile ? Math.min(settings.frequency_discounts.length, 2) : Math.min(settings.frequency_discounts.length, 4)},1fr);gap:10px;`}>
                 {settings.frequency_discounts.map((f) => (
                   <SelectCard
                     key={f.frequency}
@@ -866,7 +859,7 @@ export default function App({ companyId }: AppProps) {
 
           {/* ── To-kolonne layout ved booking ── */}
           {action === "book" ? (
-            <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;" class="estimato-book-cols">
+            <div style={`display:flex;gap:20px;align-items:flex-start;${isMobile ? "flex-direction:column;" : "flex-wrap:wrap;"}`}>
 
               {/* Venstre: kontaktoplysninger */}
               <div style="flex:1;min-width:200px;">
@@ -894,7 +887,7 @@ export default function App({ companyId }: AppProps) {
               </div>
 
               {/* Højre: kalender + tidsvalg */}
-              <div style="width:256px;flex-shrink:0;" class="estimato-calendar">
+              <div style={`width:${isMobile ? "100%" : "256px"};flex-shrink:0;`}>
                 <p style={`${s.sectionLabel}margin-bottom:8px;`}>Vælg dato</p>
                 {loadingDates ? (
                   <div style={`color:${c.gray400};font-size:0.83rem;`}>Henter datoer…</div>
@@ -907,6 +900,7 @@ export default function App({ companyId }: AppProps) {
                     availableDates={availableDates}
                     selectedDate={selectedDate}
                     onSelect={onSelectDate}
+                    fullWidth={isMobile}
                   />
                 )}
 
@@ -1049,11 +1043,12 @@ export default function App({ companyId }: AppProps) {
                     Ingen ledige tider de næste 30 dage — kontakt os direkte for at aftale en tid.
                   </div>
                 ) : (
-                  <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+                  <div style={`display:flex;gap:20px;align-items:flex-start;${isMobile ? "flex-direction:column;" : "flex-wrap:wrap;"}`}>
                     <Calendar
                       availableDates={availableDates}
                       selectedDate={selectedDate}
                       onSelect={onSelectDate}
+                      fullWidth={isMobile}
                     />
                     {selectedDate && (
                       <div style="flex:1;min-width:140px;">
