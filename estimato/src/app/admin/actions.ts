@@ -108,7 +108,7 @@ export async function bulkImportProspects(companies: {
     city: c.city || null,
     phone: c.phone || null,
     email: c.email || null,
-    source: `cvr-${c.cvrNumber}`,
+    source: `places-${c.cvrNumber}`,
   }))
   const { error } = await supabase.from("prospects").insert(rows)
   if (error) throw error

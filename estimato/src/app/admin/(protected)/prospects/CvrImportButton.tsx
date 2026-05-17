@@ -98,7 +98,7 @@ export default function CvrImportButton() {
         onClick={() => setOpen(true)}
         className="text-sm bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors flex items-center gap-2"
       >
-        Find CVR-leads
+        Find leads via Google
         {lastImportCount > 0 && (
           <span className="bg-white/20 rounded-full px-2 text-xs">{lastImportCount} importeret</span>
         )}
@@ -112,7 +112,7 @@ export default function CvrImportButton() {
   return (
     <div className="bg-white border border-blue-100 rounded-xl p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-900">Find rengøringsfirmaer fra CVR-registret</h2>
+        <h2 className="text-sm font-semibold text-gray-900">Find rengøringsfirmaer via Google Places</h2>
         <button onClick={() => { setOpen(false); setResults(null) }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
       </div>
 

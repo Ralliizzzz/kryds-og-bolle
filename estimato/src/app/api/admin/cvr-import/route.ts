@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { isAdminAuthenticated } from "@/app/admin/login/actions"
 import { createServiceClient } from "@/lib/supabase/server"
 
-const CVR_API = "http://distribution.virk.dk/cvr-permanent/vrvirksomhed/_search"
-const CLEANING_CODES = ["812100", "812200", "812900"]
+const PLACES_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+const DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json"
 
 export interface CvrCompany {
   cvrNumber: string
@@ -16,109 +16,96 @@ export interface CvrCompany {
   alreadyImported: boolean
 }
 
+function extractCity(address: string): string {
+  // "Firma ApS, Gade 1, 2100 København Ø, Denmark" → "København Ø"
+  const parts = address.split(",").map((p) => p.trim())
+  for (const part of parts) {
+    const m = part.match(/^\d{4}\s+(.+)$/)
+    if (m) return m[1]
+  }
+  return ""
+}
+
+function extractPostalCode(address: string): string {
+  const m = address.match(/\b(\d{4})\b/)
+  return m ? m[1] : ""
+}
+
 export async function POST(req: NextRequest) {
   const isAdmin = await isAdminAuthenticated()
   if (!isAdmin) return NextResponse.json({ error: "Ikke autoriseret" }, { status: 401 })
 
-  const { city, postalCode, limit = 50 } = await req.json()
+  const { city, limit = 20 } = await req.json()
 
-  const username = process.env.CVR_API_USERNAME
-  const password = process.env.CVR_API_PASSWORD
-
-  const mustFilters: object[] = [
-    { terms: { "Vrvirksomhed.nyesteHovedbranche.branchekode": CLEANING_CODES } },
-  ]
-
-  if (city?.trim()) {
-    mustFilters.push({
-      match: {
-        "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postdistrikt": city.trim().toUpperCase(),
-      },
-    })
-  }
-  if (postalCode?.trim()) {
-    mustFilters.push({
-      term: {
-        "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse.postnummer": postalCode.trim(),
-      },
-    })
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "Google Places API-nøgle mangler. Tilføj GOOGLE_PLACES_API_KEY i miljøvariablerne." },
+      { status: 500 }
+    )
   }
 
-  const query = {
-    from: 0,
-    size: Math.min(Number(limit) || 50, 100),
-    query: {
-      bool: {
-        must: mustFilters,
-        filter: [{ term: { "Vrvirksomhed.virksomhedsstatus.statuskode": "NORMAL" } }],
-      },
-    },
-    _source: [
-      "Vrvirksomhed.cvrNummer",
-      "Vrvirksomhed.virksomhedMetadata.nyesteNavn.navn",
-      "Vrvirksomhed.virksomhedMetadata.nyesteBeliggenhedsadresse",
-      "Vrvirksomhed.telefonNummer",
-      "Vrvirksomhed.elektroniskPost",
-    ],
-  }
+  const query = city?.trim()
+    ? `rengøringsfirma i ${city.trim()}`
+    : "rengøringsfirma Danmark"
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (username && password) {
-    headers["Authorization"] = `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`
-  }
-
-  let cvrRes: Response
+  let searchRes: Response
   try {
-    cvrRes = await fetch(CVR_API, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(query),
-      cache: "no-store",
-    })
+    searchRes = await fetch(
+      `${PLACES_URL}?query=${encodeURIComponent(query)}&language=da&key=${apiKey}`,
+      { cache: "no-store" }
+    )
   } catch {
-    return NextResponse.json({ error: "Kunne ikke forbinde til CVR API" }, { status: 502 })
+    return NextResponse.json({ error: "Kunne ikke forbinde til Google Places" }, { status: 502 })
   }
 
-  if (!cvrRes.ok) {
-    const text = await cvrRes.text().catch(() => "")
-    if (cvrRes.status === 401) {
-      return NextResponse.json(
-        { error: "CVR API kræver login. Opret gratis adgang på datacvr.virk.dk/datservice og tilføj CVR_API_USERNAME og CVR_API_PASSWORD i Vercel miljøvariabler." },
-        { status: 502 }
-      )
-    }
-    return NextResponse.json({ error: `CVR API fejl ${cvrRes.status}: ${text.slice(0, 200)}` }, { status: 502 })
+  if (!searchRes.ok) {
+    return NextResponse.json({ error: `Google Places fejl ${searchRes.status}` }, { status: 502 })
   }
 
-  const data = await cvrRes.json()
-  const hits: unknown[] = data.hits?.hits ?? []
+  const searchData = await searchRes.json()
+  if (searchData.status === "REQUEST_DENIED") {
+    return NextResponse.json({ error: `API-nøgle afvist: ${searchData.error_message}` }, { status: 502 })
+  }
+  if (searchData.status === "ZERO_RESULTS") {
+    return NextResponse.json({ companies: [], total: 0 })
+  }
 
-  const supabase = await createServiceClient()
-  const { data: existing } = await supabase.from("prospects").select("source").like("source", "cvr-%")
-  const importedSet = new Set(
-    (existing ?? []).map((p) => p.source?.replace("cvr-", "")).filter(Boolean)
+  const places: any[] = (searchData.results ?? []).slice(0, Math.min(Number(limit) || 20, 20))
+
+  // Fetch phone + website via Place Details for each result
+  const detailed = await Promise.all(
+    places.map(async (place) => {
+      try {
+        const r = await fetch(
+          `${DETAILS_URL}?place_id=${place.place_id}&fields=name,formatted_phone_number,website,formatted_address&language=da&key=${apiKey}`,
+          { cache: "no-store" }
+        )
+        const d = await r.json()
+        return { ...place, ...(d.result ?? {}) }
+      } catch {
+        return place
+      }
+    })
   )
 
-  const companies: CvrCompany[] = hits.map((hit: any) => {
-    const v = hit._source?.Vrvirksomhed ?? {}
-    const meta = v.virksomhedMetadata ?? {}
-    const addr = meta.nyesteBeliggenhedsadresse ?? {}
-    const cvrNumber = String(v.cvrNummer ?? "")
-    const street = [addr.vejnavn, addr.husnummerFra].filter(Boolean).join(" ")
-    const phone = v.telefonNummer?.[0]?.kontaktoplysning ?? null
-    const email = v.elektroniskPost?.[0]?.kontaktoplysning ?? null
+  // Dedup check against existing prospects
+  const supabase = await createServiceClient()
+  const { data: existing } = await supabase.from("prospects").select("source").like("source", "places-%")
+  const importedSet = new Set(
+    (existing ?? []).map((p) => p.source?.replace("places-", "")).filter(Boolean)
+  )
 
-    return {
-      cvrNumber,
-      companyName: meta.nyesteNavn?.navn ?? "Ukendt",
-      address: street,
-      city: addr.postdistrikt ?? "",
-      postalCode: String(addr.postnummer ?? ""),
-      phone,
-      email,
-      alreadyImported: importedSet.has(cvrNumber),
-    }
-  })
+  const companies: CvrCompany[] = detailed.map((place) => ({
+    cvrNumber: place.place_id,
+    companyName: place.name ?? "Ukendt",
+    address: place.formatted_address ?? "",
+    city: extractCity(place.formatted_address ?? ""),
+    postalCode: extractPostalCode(place.formatted_address ?? ""),
+    phone: place.formatted_phone_number ?? null,
+    email: null,
+    alreadyImported: importedSet.has(place.place_id),
+  }))
 
-  return NextResponse.json({ companies, total: data.hits?.total?.value ?? companies.length })
+  return NextResponse.json({ companies, total: searchData.results?.length ?? companies.length })
 }
